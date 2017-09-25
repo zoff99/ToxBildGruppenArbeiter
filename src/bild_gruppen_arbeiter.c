@@ -11,23 +11,43 @@
 #include <pthread.h>
 #include <time.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <stdbool.h>
+
+#include <sys/time.h>
+#include <sys/ioctl.h>
 
 #include <tox/tox.h>
 #include <tox/toxav.h>
 #include <sodium.h>
+
+
+
+// ----------- version -----------
+// ----------- version -----------
+#define VERSION_MAJOR 0
+#define VERSION_MINOR 99
+#define VERSION_PATCH 0
+static const char global_version_string[] = "0.99.0";
+// ----------- version -----------
+// ----------- version -----------
+
 
 #define CURRENT_LOG_LEVEL 9 // 0 -> error, 1 -> warn, 2 -> info, 9 -> debug
 #define RECONNECT_AFTER_OFFLINE_SECONDS 90 // 90s offline and we try to reconnect
 #define PROXY_PORT_TOR_DEFAULT 9050
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define c_sleep(x) usleep(1000*x)
+#define DEFAULT_FPS_SLEEP_MS 250 // 250=4fps, 500=2fps, 160=6fps  // default video fps (sleep in msecs.)
+
 
 
 static uint64_t last_purge;
-static uint64_t start_time;
+uint64_t global_start_time;
 
 static const int32_t audio_bitrate = 8; // kbits/s
 static const int32_t video_bitrate = 2500; // kbits/s
@@ -48,7 +68,19 @@ int toxav_iterate_thread_stop = 0;
 int tox_loop_running = 1;
 int global_want_restart = 0;
 TOX_CONNECTION my_connection_status = TOX_CONNECTION_NONE;
+int global_video_active = 0;
+uint32_t friend_to_send_video_to = -1;
 
+
+
+
+
+typedef struct DHT_node {
+    const char *ip;
+    uint16_t port;
+    const char key_hex[TOX_PUBLIC_KEY_SIZE*2 + 1];
+    unsigned char key_bin[TOX_PUBLIC_KEY_SIZE];
+} DHT_node;
 
 
 
@@ -187,24 +219,6 @@ void friend_cleanup(Tox *tox)
 	}
 }
 
-bool save_profile(Tox *tox)
-{
-	uint32_t save_size = tox_get_savedata_size(tox);
-	uint8_t save_data[save_size];
-
-	tox_get_savedata(tox, save_data);
-
-	FILE *file = fopen(data_filename, "wb");
-	if (file) {
-		fwrite(save_data, sizeof(uint8_t), save_size, file);
-		fclose(file);
-		return true;
-	} else {
-		printf("Could not write data to disk\n");
-		return false;
-	}
-}
-
 static void *run_toxav(void *arg)
 {
 	ToxAV *toxav = (ToxAV *)arg;
@@ -219,27 +233,6 @@ static void *run_toxav(void *arg)
 	return NULL;
 }
 
-static void *run_tox(void *arg)
-{
-	Tox *tox = (Tox *)arg;
-
-	for (;;) {
-		tox_iterate(tox, NULL);
-
-		uint64_t curr_time = time(NULL);
-		if (curr_time - last_purge > 1800) {
-			friend_cleanup(tox);
-			save_profile(tox);
-
-			last_purge = curr_time;
-		}
-
-		long long time = tox_iteration_interval(tox) * 1000000L;
-		nanosleep((const struct timespec[]){{0, time}}, NULL);
-	}
-
-	return NULL;
-}
 
 /* taken from ToxBot */
 static void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs)
@@ -256,32 +249,6 @@ bool file_exists(const char *filename)
 	return access(filename, 0) != -1;
 }
 
-bool load_profile(Tox **tox, struct Tox_Options *options)
-{
-	FILE *file = fopen(data_filename, "rb");
-
-	if (file) {
-		fseek(file, 0, SEEK_END);
-		long file_size = ftell(file);
-		fseek(file, 0, SEEK_SET);
-
-		uint8_t *save_data = (uint8_t *)malloc(file_size * sizeof(uint8_t));
-		fread(save_data, sizeof(uint8_t), file_size, file);
-		fclose(file);
-
-		options->savedata_data = save_data;
-		options->savedata_type = TOX_SAVEDATA_TYPE_TOX_SAVE;
-		options->savedata_length = file_size;
-
-		TOX_ERR_NEW err;
-		*tox = tox_new(options, &err);
-		free(save_data);
-
-		return err == TOX_ERR_NEW_OK;
-	}
-
-	return false;
-}
 
 uint32_t get_online_friend_count(Tox *tox)
 {
@@ -333,7 +300,7 @@ void friend_request(Tox *tox, const uint8_t *public_key, const uint8_t *message,
 		printf("Added to our friend list\n");
 	}
 
-	save_profile(tox);
+	update_savedata_file(tox);
 }
 
 void friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, const uint8_t *message, size_t length, void *user_data)
@@ -347,7 +314,7 @@ void friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
 		char time_str[64];
 		uint64_t cur_time = time(NULL);
 
-		get_elapsed_time_str(time_str, sizeof(time_str), cur_time - start_time);
+		get_elapsed_time_str(time_str, sizeof(time_str), cur_time - global_start_time);
 		snprintf(time_msg, sizeof(time_msg), "Uptime: %s", time_str);
 		tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *)time_msg, strlen(time_msg), NULL);
 
@@ -361,9 +328,9 @@ void friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
 		const char *info_msg = "If you're experiencing issues, contact Impyy in #tox at freenode";
 		tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *)info_msg, strlen(info_msg), NULL);
 	} else if (!strcmp("!callme", dest_msg)) {
-		toxav_call(g_toxAV, friend_number, audio_bitrate, 0, NULL);
+		toxav_call(mytox_av, friend_number, audio_bitrate, 0, NULL);
 	} else if (!strcmp ("!videocallme", dest_msg)) {
-		toxav_call (g_toxAV, friend_number, audio_bitrate, video_bitrate, NULL);
+		toxav_call (mytox_av, friend_number, audio_bitrate, video_bitrate, NULL);
 	} else {
 		/* Just repeat what has been said like the nymph Echo. */
 		tox_friend_send_message (tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, message, length, NULL);
@@ -473,6 +440,11 @@ void video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t width, u
 	free(v_dest);
 }
 
+
+void tox_log_cb__custom(Tox *tox, TOX_LOG_LEVEL level, const char *file, uint32_t line, const char *func, const char *message, void *user_data)
+{
+	dbg(9, "%d:%s:%d:%s:%s\n", (int)level, file, (int)line, func, message);
+}
 
 
 Tox *create_tox()
@@ -964,6 +936,9 @@ int main(int argc, char *argv[])
 
     logfile = fopen(log_filename, "wb");
     setvbuf(logfile, NULL, _IONBF, 0);
+
+	global_video_active = 0;
+	friend_to_send_video_to = -1;
 
 
 	Tox *tox = create_tox();
