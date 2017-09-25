@@ -13,9 +13,12 @@ static uint64_t last_purge;
 static uint64_t start_time;
 static bool signal_exit = false;
 
-static const int32_t audio_bitrate = 48;
-static const int32_t video_bitrate = 5000;
-static const char *data_filename = "data";
+static const int32_t audio_bitrate = 8; // kbits/s
+static const int32_t video_bitrate = 2500; // kbits/s
+static const char *data_filename = "toxsave.dat";
+static const char *bot_name = "BildGruppenArbeiter";
+static const char *bot_status_msg = "VideoConfBot. Send '!info' for stats.";
+
 
 static Tox *g_tox = NULL;
 static ToxAV *g_toxAV = NULL;
@@ -256,7 +259,7 @@ void call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void *user
 
 	bool send_audio = (state & TOXAV_FRIEND_CALL_STATE_SENDING_A) && (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_A);
 	bool send_video = state & TOXAV_FRIEND_CALL_STATE_SENDING_V && (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_V);
-	toxav_bit_rate_set(toxAV, friend_number, send_audio ? audio_bitrate : 0, send_video ? video_bitrate : 0, NULL);
+	// ** deactviated ** // toxav_bit_rate_set(toxAV, friend_number, send_audio ? audio_bitrate : 0, send_video ? video_bitrate : 0, NULL);
 
 	printf("Call state for friend %d changed to %d: audio: %d, video: %d\n", friend_number, state, send_audio, send_video);
 }
@@ -264,11 +267,19 @@ void call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void *user
 void audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_t *pcm, size_t sample_count, uint8_t channels, uint32_t sampling_rate, void *user_data)
 {
 	TOXAV_ERR_SEND_FRAME err;
+
+
+
+	// TODO: send to all connected friends ---------------------------
 	toxav_audio_send_frame(toxAV, friend_number, pcm, sample_count, channels, sampling_rate, &err);
 
 	if (err != TOXAV_ERR_SEND_FRAME_OK) {
 		printf("Could not send audio frame to friend: %d, error: %d\n", friend_number, err);
 	}
+	// TODO: send to all connected friends ---------------------------
+
+
+
 }
 
 void video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t width, uint16_t height, const uint8_t *y, const uint8_t *u, const uint8_t *v, int32_t ystride, int32_t ustride, int32_t vstride, void *user_data)
@@ -296,15 +307,21 @@ void video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t width, u
 	}
 
 	TOXAV_ERR_SEND_FRAME err;
+
+
+
+	// TODO: send to all connected friends ---------------------------
 	toxav_video_send_frame(toxAV, friend_number, width, height, y_dest, u_dest, v_dest, &err);
+	if (err != TOXAV_ERR_SEND_FRAME_OK) {
+		printf("Could not send video frame to friend: %d, error: %d\n", friend_number, err);
+	}
+	// TODO: send to all connected friends ---------------------------
+
+
 
 	free(y_dest);
 	free(u_dest);
 	free(v_dest);
-
-	if (err != TOXAV_ERR_SEND_FRAME_OK) {
-		printf("Could not send video frame to friend: %d, error: %d\n", friend_number, err);
-	}
 }
 
 static void handle_signal(int sig)
@@ -352,11 +369,8 @@ int main(int argc, char *argv[])
 
 	printf("%s\n", address_hex);
 
-	const char *name = "EchoBot";
-	const char *status_msg = "Tox audio/video testing service. Send '!info' for stats.";
-
-	tox_self_set_name(g_tox, (uint8_t *)name, strlen(name), NULL);
-	tox_self_set_status_message(g_tox, (uint8_t *)status_msg, strlen(status_msg), NULL);
+	tox_self_set_name(g_tox, (uint8_t *)bot_name, strlen(bot_name), NULL);
+	tox_self_set_status_message(g_tox, (uint8_t *)bot_status_msg, strlen(bot_status_msg), NULL);
 
 	const char *key_hex = "6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E";
 	uint8_t key_bin[TOX_PUBLIC_KEY_SIZE];
