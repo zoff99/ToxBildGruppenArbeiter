@@ -267,7 +267,7 @@ uint32_t get_online_friend_count(Tox *tox)
 	return online_friend_count;
 }
 
-void self_connection_status(Tox *tox, TOX_CONNECTION connection_status, void *userData)
+void cb___self_connection_status(Tox *tox, TOX_CONNECTION connection_status, void *userData)
 {
 	switch (connection_status)
 	{
@@ -289,7 +289,7 @@ void self_connection_status(Tox *tox, TOX_CONNECTION connection_status, void *us
     }
 }
 
-void friend_request(Tox *tox, const uint8_t *public_key, const uint8_t *message, size_t length, void *user_data)
+void cb___friend_request(Tox *tox, const uint8_t *public_key, const uint8_t *message, size_t length, void *user_data)
 {
 	TOX_ERR_FRIEND_ADD err;
 	tox_friend_add_norequest(tox, public_key, &err);
@@ -303,7 +303,7 @@ void friend_request(Tox *tox, const uint8_t *public_key, const uint8_t *message,
 	update_savedata_file(tox);
 }
 
-void friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, const uint8_t *message, size_t length, void *user_data)
+void cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, const uint8_t *message, size_t length, void *user_data)
 {
 	char dest_msg[length + 1];
 	dest_msg[length] = '\0';
@@ -341,7 +341,7 @@ void friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
 	}
 }
 
-void file_recv(Tox *tox, uint32_t friend_number, uint32_t file_number, uint32_t kind, uint64_t file_size, const uint8_t *filename, size_t filename_length, void *user_data)
+void cb___file_recv(Tox *tox, uint32_t friend_number, uint32_t file_number, uint32_t kind, uint64_t file_size, const uint8_t *filename, size_t filename_length, void *user_data)
 {
 	if (kind == TOX_FILE_KIND_AVATAR) {
 		return;
@@ -353,7 +353,7 @@ void file_recv(Tox *tox, uint32_t friend_number, uint32_t file_number, uint32_t 
 	tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t*)msg, strlen(msg), NULL);
 }
 
-void call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool video_enabled, void *user_data)
+void cb___call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool video_enabled, void *user_data)
 {
 	TOXAV_ERR_ANSWER err;
 	toxav_answer(toxAV, friend_number, audio_enabled ? audio_bitrate : 0, video_enabled ? video_bitrate : 0, &err);
@@ -363,7 +363,7 @@ void call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool video_e
 	}
 }
 
-void call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void *user_data)
+void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void *user_data)
 {
 	if (state & TOXAV_FRIEND_CALL_STATE_FINISHED) {
 		printf("Call with friend %d finished\n", friend_number);
@@ -380,7 +380,7 @@ void call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void *user
 	printf("Call state for friend %d changed to %d: audio: %d, video: %d\n", friend_number, state, send_audio, send_video);
 }
 
-void audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_t *pcm, size_t sample_count, uint8_t channels, uint32_t sampling_rate, void *user_data)
+void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_t *pcm, size_t sample_count, uint8_t channels, uint32_t sampling_rate, void *user_data)
 {
 	TOXAV_ERR_SEND_FRAME err;
 
@@ -398,7 +398,7 @@ void audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_t *pc
 
 }
 
-void video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t width, uint16_t height, const uint8_t *y, const uint8_t *u, const uint8_t *v, int32_t ystride, int32_t ustride, int32_t vstride, void *user_data)
+void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t width, uint16_t height, const uint8_t *y, const uint8_t *u, const uint8_t *v, int32_t ystride, int32_t ustride, int32_t vstride, void *user_data)
 {
 	ystride = abs(ystride);
 	ustride = abs(ustride);
@@ -952,10 +952,10 @@ int main(int argc, char *argv[])
 	print_tox_id(tox);
 
 	// init callbacks ----------------------------------
-	tox_callback_self_connection_status(tox, self_connection_status);
-	tox_callback_friend_request(tox, friend_request);
-	tox_callback_friend_message(tox, friend_message);
-	tox_callback_file_recv(tox, file_recv);
+	tox_callback_self_connection_status(tox, cb___self_connection_status);
+	tox_callback_friend_request(tox, cb___friend_request);
+	tox_callback_friend_message(tox, cb___friend_message);
+	tox_callback_file_recv(tox, cb___file_recv);
 	// init callbacks ----------------------------------
 
 	update_savedata_file(tox);
@@ -1000,10 +1000,10 @@ int main(int argc, char *argv[])
 	}
 
 	// init AV callbacks -------------------------------
-	toxav_callback_call(mytox_av, call, NULL);
-	toxav_callback_call_state(mytox_av, call_state, NULL);
-	toxav_callback_audio_receive_frame(mytox_av, audio_receive_frame, NULL);
-	toxav_callback_video_receive_frame(mytox_av, video_receive_frame, NULL);
+	toxav_callback_call(mytox_av, cb___call, NULL);
+	toxav_callback_call_state(mytox_av, cb___call_state, NULL);
+	toxav_callback_audio_receive_frame(mytox_av, cb___audio_receive_frame, NULL);
+	toxav_callback_video_receive_frame(mytox_av, cb___video_receive_frame, NULL);
 	// init AV callbacks -------------------------------
 
 
