@@ -69,8 +69,7 @@ int tox_loop_running = 1;
 int global_want_restart = 0;
 TOX_CONNECTION my_connection_status = TOX_CONNECTION_NONE;
 int global_video_active = 0;
-uint32_t friend_to_send_video_to = -1;
-
+uint32_t friend_to_take_av_from = -1;
 
 
 
@@ -190,11 +189,8 @@ void friend_cleanup(Tox *tox)
 {
 	uint32_t friend_count = tox_self_get_friend_list_size(tox);
 
-
-
-	      if (friend_count == 0)
-
-{
+	if (friend_count == 0)
+	{
 		return;
 	}
 
@@ -202,35 +198,24 @@ void friend_cleanup(Tox *tox)
 	tox_self_get_friend_list(tox, friends);
 
 	uint64_t curr_time = time(NULL);
-	for (uint32_t i = 0; i < friend_count; i++) {
+	for (uint32_t i = 0; i < friend_count; i++)
+	{
 		TOX_ERR_FRIEND_GET_LAST_ONLINE err;
 		uint32_t friend = friends[i];
 		uint64_t last_online = tox_friend_get_last_online(tox, friend, &err);
 
-		if (err != TOX_ERR_FRIEND_GET_LAST_ONLINE_OK) {
+		if (err != TOX_ERR_FRIEND_GET_LAST_ONLINE_OK)
+		{
 			printf("couldn't obtain 'last online', this should never happen\n");
 			continue;
 		}
 
-		if (curr_time - last_online > 2629743) {
+		if (curr_time - last_online > 2629743)
+		{
 			printf("removing friend %d\n", friend);
 			tox_friend_delete(tox, friend, NULL);
 		}
 	}
-}
-
-static void *run_toxav(void *arg)
-{
-	ToxAV *toxav = (ToxAV *)arg;
-
-	for (;;) {
-		toxav_iterate(toxav);
-
-		long long time = toxav_iteration_interval(toxav) * 1000000L;
-		nanosleep((const struct timespec[]){{0, time}}, NULL);
-	}
-
-	return NULL;
 }
 
 
@@ -258,8 +243,10 @@ uint32_t get_online_friend_count(Tox *tox)
 
 	tox_self_get_friend_list(tox, friends);
 
-	for (uint32_t i = 0; i < friend_count; i++) {
-		if (tox_friend_get_connection_status(tox, friends[i], NULL) != TOX_CONNECTION_NONE) {
+	for (uint32_t i = 0; i < friend_count; i++)
+	{
+		if (tox_friend_get_connection_status(tox, friends[i], NULL) != TOX_CONNECTION_NONE)
+		{
 			online_friend_count++;
 		}
 	}
@@ -294,9 +281,12 @@ void cb___friend_request(Tox *tox, const uint8_t *public_key, const uint8_t *mes
 	TOX_ERR_FRIEND_ADD err;
 	tox_friend_add_norequest(tox, public_key, &err);
 
-	if (err != TOX_ERR_FRIEND_ADD_OK) {
+	if (err != TOX_ERR_FRIEND_ADD_OK)
+	{
 		printf("Could not add friend, error: %d\n", err);
-	} else {
+	}
+	else
+	{
 		printf("Added to our friend list\n");
 	}
 
@@ -309,7 +299,8 @@ void cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type
 	dest_msg[length] = '\0';
 	memcpy(dest_msg, message, length);
 
-	if (!strcmp("!info", dest_msg)) {
+	if (!strcmp(".info", dest_msg))
+	{
 		char time_msg[TOX_MAX_MESSAGE_LENGTH];
 		char time_str[64];
 		uint64_t cur_time = time(NULL);
@@ -324,26 +315,27 @@ void cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type
 
 		const char *friend_info_msg = "Friends are removed after 1 month of inactivity";
 		tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *)friend_info_msg, strlen(friend_info_msg), NULL);
-
-		const char *info_msg = "If you're experiencing issues, contact Impyy in #tox at freenode";
-		tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *)info_msg, strlen(info_msg), NULL);
-	} else if (!strcmp("!callme", dest_msg)) {
-		toxav_call(mytox_av, friend_number, audio_bitrate, 0, NULL);
-	} else if (!strcmp ("!videocallme", dest_msg)) {
-		toxav_call (mytox_av, friend_number, audio_bitrate, video_bitrate, NULL);
-	} else {
-		/* Just repeat what has been said like the nymph Echo. */
-		tox_friend_send_message (tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, message, length, NULL);
-
+	}
+	//else if (!strcmp("!callme", dest_msg))
+	//{
+	//	toxav_call(mytox_av, friend_number, audio_bitrate, 0, NULL);
+	//}
+	//else if (!strcmp ("!videocallme", dest_msg))
+	//{
+	//	toxav_call(mytox_av, friend_number, audio_bitrate, video_bitrate, NULL);
+	//}
+	else
+	{
 		/* Send usage instructions in new message. */
-		static const char *help_msg = "EchoBot commands:\n!info: Show stats.\n!callme: Launch an audio call.\n!videocallme: Launch a video call.";
-		tox_friend_send_message (tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t*) help_msg, strlen (help_msg), NULL);
+		static const char *help_msg = "Commands:\n.info: Show stats";
+		tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t*) help_msg, strlen (help_msg), NULL);
 	}
 }
 
 void cb___file_recv(Tox *tox, uint32_t friend_number, uint32_t file_number, uint32_t kind, uint64_t file_size, const uint8_t *filename, size_t filename_length, void *user_data)
 {
-	if (kind == TOX_FILE_KIND_AVATAR) {
+	if (kind == TOX_FILE_KIND_AVATAR)
+	{
 		return;
 	}
 
@@ -358,17 +350,21 @@ void cb___call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool vi
 	TOXAV_ERR_ANSWER err;
 	toxav_answer(toxAV, friend_number, audio_enabled ? audio_bitrate : 0, video_enabled ? video_bitrate : 0, &err);
 
-	if (err != TOXAV_ERR_ANSWER_OK) {
+	if (err != TOXAV_ERR_ANSWER_OK)
+	{
 		printf("Could not answer call, friend: %d, error: %d\n", friend_number, err);
 	}
 }
 
 void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void *user_data)
 {
-	if (state & TOXAV_FRIEND_CALL_STATE_FINISHED) {
+	if (state & TOXAV_FRIEND_CALL_STATE_FINISHED)
+	{
 		printf("Call with friend %d finished\n", friend_number);
 		return;
-	} else if (state & TOXAV_FRIEND_CALL_STATE_ERROR) {
+	}
+	else if (state & TOXAV_FRIEND_CALL_STATE_ERROR)
+	{
 		printf("Call with friend %d errored\n", friend_number);
 		return;
 	}
@@ -388,8 +384,8 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
 
 	// TODO: send to all connected friends ---------------------------
 	toxav_audio_send_frame(toxAV, friend_number, pcm, sample_count, channels, sampling_rate, &err);
-
-	if (err != TOXAV_ERR_SEND_FRAME_OK) {
+	if (err != TOXAV_ERR_SEND_FRAME_OK)
+	{
 		printf("Could not send audio frame to friend: %d, error: %d\n", friend_number, err);
 	}
 	// TODO: send to all connected friends ---------------------------
@@ -404,7 +400,8 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
 	ustride = abs(ustride);
 	vstride = abs(vstride);
 
-	if (ystride < width || ustride < width / 2 || vstride < width / 2) {
+	if (ystride < width || ustride < width / 2 || vstride < width / 2)
+	{
 		printf("wtf\n");
 		return;
 	}
@@ -413,11 +410,13 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
 	uint8_t *u_dest = (uint8_t*)malloc(width * height / 2);
 	uint8_t *v_dest = (uint8_t*)malloc(width * height / 2);
 
-	for (size_t h = 0; h < height; h++) {
+	for (size_t h = 0; h < height; h++)
+	{
 		memcpy(&y_dest[h * width], &y[h * ystride], width);
 	}
 
-	for (size_t h = 0; h < height / 2; h++) {
+	for (size_t h = 0; h < height / 2; h++)
+	{
 		memcpy(&u_dest[h * width / 2], &u[h * ustride], width / 2);
 		memcpy(&v_dest[h * width / 2], &v[h * vstride], width / 2);
 	}
@@ -428,7 +427,8 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
 
 	// TODO: send to all connected friends ---------------------------
 	toxav_video_send_frame(toxAV, friend_number, width, height, y_dest, u_dest, v_dest, &err);
-	if (err != TOXAV_ERR_SEND_FRAME_OK) {
+	if (err != TOXAV_ERR_SEND_FRAME_OK)
+	{
 		printf("Could not send video frame to friend: %d, error: %d\n", friend_number, err);
 	}
 	// TODO: send to all connected friends ---------------------------
@@ -770,16 +770,9 @@ void *thread_av(void *data)
 		{
 			pthread_mutex_lock(&av_thread_lock);
 			// dbg(9, "AV Thread #%d:get frame\n", (int) id);
-			if (friend_to_send_video_to != -1)
-			{
-				// dbg(9, "AV Thread #%d:send frame to friend num=%d\n", (int) id, (int)friend_to_send_video_to);
-			}
 
             pthread_mutex_unlock(&av_thread_lock);
-			// yieldcpu(1000); // 1 frame every 1 seconds!!
             yieldcpu(DEFAULT_FPS_SLEEP_MS); /* ~4 frames per second */
-            // yieldcpu(80); /* ~12 frames per second */
-            // yieldcpu(40); /* 60fps = 16.666ms || 25 fps = 40ms || the data quality is SO much better at 25... */
 		}
 		else
 		{
@@ -938,7 +931,7 @@ int main(int argc, char *argv[])
     setvbuf(logfile, NULL, _IONBF, 0);
 
 	global_video_active = 0;
-	friend_to_send_video_to = -1;
+	friend_to_take_av_from = -1;
 
 
 	Tox *tox = create_tox();
