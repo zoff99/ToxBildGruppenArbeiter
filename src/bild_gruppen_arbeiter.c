@@ -20,6 +20,8 @@
 
 #include <sys/time.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <tox/tox.h>
 #include <tox/toxav.h>
@@ -54,6 +56,7 @@ static const int32_t video_bitrate = 2500; // kbits/s
 static const char *savedata_filename = "savedata.tox";
 const char *savedata_tmp_filename = "savedata.tox.tmp";
 const char *log_filename = "bild_gruppen_arbeiter.log";
+const char *tv_pubkey_filename = "tv_pubkey.txt";
 static const char *bot_name = "BildGruppenArbeiter";
 static const char *bot_status_msg = "VideoConfBot. Send '!info' for stats.";
 time_t my_last_offline_timestamp = -1;
@@ -70,6 +73,7 @@ int global_want_restart = 0;
 TOX_CONNECTION my_connection_status = TOX_CONNECTION_NONE;
 int global_video_active = 0;
 uint32_t friend_to_take_av_from = -1;
+uint8_t *global_tv_pubkey = NULL;
 
 
 
@@ -166,7 +170,51 @@ time_t get_unix_time(void)
     return time(NULL);
 }
 
+void bin_to_hex_string(uint8_t *tox_id_bin, size_t tox_id_bin_len, char *toxid_str)
+{
+	char tox_id_hex_local[TOX_ADDRESS_SIZE*2 + 1];
+	CLEAR(tox_id_hex_local);
 
+	// dbg(9, "bin_to_hex_string:sizeof(tox_id_hex_local)=%d\n", (int)sizeof(tox_id_hex_local));
+	// dbg(9, "bin_to_hex_string:strlen(tox_id_bin)=%d\n", (int)tox_id_bin_len);
+
+	sodium_bin2hex(tox_id_hex_local, sizeof(tox_id_hex_local), tox_id_bin, tox_id_bin_len);
+
+    for (size_t i = 0; i < sizeof(tox_id_hex_local)-1; i ++)
+	{
+		// dbg(9, "i=%d\n", i);
+        tox_id_hex_local[i] = toupper(tox_id_hex_local[i]);
+    }
+
+	snprintf(toxid_str, (size_t)(TOX_ADDRESS_SIZE*2 + 1), "%s", (const char*)tox_id_hex_local);
+}
+
+
+unsigned int char_to_int(char c)
+{
+  if (c >= '0' && c <= '9') return      c - '0';
+  if (c >= 'A' && c <= 'F') return 10 + c - 'A';
+  if (c >= 'a' && c <= 'f') return 10 + c - 'a';
+  return -1;
+}
+
+uint8_t *hex_string_to_bin(const char *hex_string)
+{
+	size_t len = TOX_ADDRESS_SIZE;
+	uint8_t *val = malloc(len);
+	memset(val, 0, (size_t)len);
+
+	// dbg(9, "hex_string_to_bin:len=%d\n", (int)len);
+
+	for (size_t i = 0; i != len; ++i)
+	{
+		// dbg(9, "hex_string_to_bin:%d %d\n", hex_string[2*i], hex_string[2*i+1]);
+		val[i] = (16 * char_to_int(hex_string[2*i])) + (char_to_int(hex_string[2*i+1]));
+		// dbg(9, "hex_string_to_bin:i=%d val[i]=%d\n", i, (int)val[i]);
+	}
+
+    return val;
+}
 
 void update_savedata_file(const Tox *tox)
 {
@@ -181,6 +229,110 @@ void update_savedata_file(const Tox *tox)
     rename(savedata_tmp_filename, savedata_filename);
 
     free(savedata);
+}
+
+#if 0
+bool file_exists(const char *filename)
+{
+	return access(filename, 0) != -1;
+}
+#endif
+
+bool file_exists(const char *path)
+{
+    struct stat s;
+    return stat(path, &s) == 0;
+}
+
+off_t file_size(const char *path)
+{
+    struct stat st;
+
+    if (stat(path, &st) == -1)
+	{
+        return 0;
+	}
+
+    return st.st_size;
+}
+
+void delete_tv_file()
+{
+	unlink(tv_pubkey_filename);
+}
+
+void create_tv_file_if_not_exists()
+{
+    if (!file_exists(tv_pubkey_filename))
+	{
+        FILE *fp = fopen(tv_pubkey_filename, "w");
+
+        if (fp == NULL)
+		{
+            dbg(1, "Warning: failed to create tv_pubkey_filename file\n");
+            return;
+        }
+
+        fclose(fp);
+        dbg(1, "Warning: creating new tv_pubkey_filename file. Did you lose the old one?\n");
+	}
+}
+
+void read_tvpubkey_from_file(uint8_t *tv_pubkey)
+{
+	create_tv_file_if_not_exists();
+	tv_pubkey = NULL;
+
+	FILE *fp = fopen(tv_pubkey_filename, "r");
+    if (fp == NULL)
+	{
+        dbg(1, "Warning: failed to read tv_pubkey_filename file\n");
+		return;
+	}
+
+    char id[256];
+	int len;
+    while (fgets(id, sizeof(id), fp))
+	{
+        len = strlen(id);
+        if (--len < TOX_PUBLIC_KEY_SIZE)
+		{
+            continue;
+		}
+
+        tv_pubkey = hex_string_to_bin(id);
+		break;
+	}
+
+	fclose(fp);
+}
+
+void write_tvpubkey_to_file(uint8_t *tv_pubkey)
+{
+	if (tv_pubkey == NULL)
+	{
+		delete_tv_file();
+	}
+	else
+	{
+		create_tv_file_if_not_exists();
+		
+		FILE *fp = fopen(tv_pubkey_filename, "wb");
+		if (fp == NULL)
+		{
+			dbg(1, "Warning: failed to read tv_pubkey_filename file\n");
+			return;
+		}
+
+		// dbg(9, "strlen(tv_pubkey)=%d\n", strlen(tv_pubkey));
+		char tv_pubkey_string[TOX_ADDRESS_SIZE*2 + 1];
+		CLEAR(tv_pubkey_string);
+		bin_to_hex_string(tv_pubkey, (size_t)TOX_ADDRESS_SIZE, tv_pubkey_string);
+		// dbg(9, "tv_pubkey_string(0)=%s\n", tv_pubkey_string);
+
+		int result = fputs(tv_pubkey_string, fp);
+		fclose(fp);
+	}
 }
 
 
@@ -220,18 +372,13 @@ void friend_cleanup(Tox *tox)
 
 
 /* taken from ToxBot */
-static void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs)
+void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs)
 {
 	long unsigned int minutes = (secs % 3600) / 60;
 	long unsigned int hours = (secs / 3600) % 24;
 	long unsigned int days = (secs / 3600) / 24;
 
 	snprintf(buf, bufsize, "%lud %luh %lum", days, hours, minutes);
-}
-
-bool file_exists(const char *filename)
-{
-	return access(filename, 0) != -1;
 }
 
 
@@ -316,6 +463,39 @@ void cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type
 		const char *friend_info_msg = "Friends are removed after 1 month of inactivity";
 		tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *)friend_info_msg, strlen(friend_info_msg), NULL);
 	}
+	else if (!strncmp(".settv ", dest_msg, (size_t)6))
+	{
+		// dbg(9, "strlen(dest_msg)=%d dest_msg=%s\n", (int)strlen(dest_msg), dest_msg);
+		// dbg(9, "(TOX_ADDRESS_SIZE * 2) + 7=%d\n", (int)((TOX_ADDRESS_SIZE * 2) + 7));
+		if (strlen(dest_msg) == ((TOX_ADDRESS_SIZE * 2) + 7))
+		{
+			char *tv_hex_pubkey_string = (dest_msg + 7);
+			// dbg(9, "strlen(tv_hex_pubkey_string)=%d TOX_ADDRESS_SIZE * 2 +0=%d\n", (int)strlen(tv_hex_pubkey_string), (int)((TOX_ADDRESS_SIZE * 2)+0));
+			// dbg(9, "tv_hex_pubkey_string(2)=%s\n", tv_hex_pubkey_string);
+			uint8_t *tv_pubkey = hex_string_to_bin(tv_hex_pubkey_string);
+			if (tv_pubkey)
+			{
+				if (global_tv_pubkey)
+				{
+					free(global_tv_pubkey);
+					global_tv_pubkey = NULL;
+				}
+				write_tvpubkey_to_file(tv_pubkey);
+				global_tv_pubkey = tv_pubkey;
+				// dbg(9, "global_tv_pubkey(3)=%s\n", global_tv_pubkey);
+			}
+		}
+	}
+	else if (!strncmp(".deltv", dest_msg, (size_t)strlen(".deltv")))
+	{
+		if (global_tv_pubkey)
+		{
+			free(global_tv_pubkey);
+			global_tv_pubkey = NULL;
+			dbg(9, "global_tv_pubkey(4)=NULL\n");
+		}
+		write_tvpubkey_to_file(NULL);
+	}
 	//else if (!strcmp("!callme", dest_msg))
 	//{
 	//	toxav_call(mytox_av, friend_number, audio_bitrate, 0, NULL);
@@ -327,7 +507,12 @@ void cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type
 	else
 	{
 		/* Send usage instructions in new message. */
-		static const char *help_msg = "Commands:\n.info: Show stats";
+		static const char *help_msg = "Commands:\n\
+.info                  Show stats\n\
+.settv <ToxID>         Set <ToxID> as TV\n\
+.deltv                 Delete TV\n\
+.locksp                Lock current Speaker\n\
+.unlocksp              Unlock Speaker";
 		tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t*) help_msg, strlen (help_msg), NULL);
 	}
 }
@@ -747,7 +932,7 @@ void bootstrap(Tox *tox)
 
 void *thread_av(void *data)
 {
-	ToxAV *av = (ToxAV *) data;
+	ToxAV *av = (ToxAV *)data;
 
 	pthread_t id = pthread_self();
 	pthread_mutex_t av_thread_lock;
@@ -842,6 +1027,7 @@ void get_my_toxid(Tox *tox, char *toxid_str)
 }
 
 
+
 void reconnect(Tox *tox)
 {
 	bootstrap(tox);
@@ -932,7 +1118,13 @@ int main(int argc, char *argv[])
 
 	global_video_active = 0;
 	friend_to_take_av_from = -1;
+	global_tv_pubkey = NULL;
 
+	read_tvpubkey_from_file(global_tv_pubkey);
+	//if (global_tv_pubkey)
+	//{
+	//	dbg(9, "global_tv_pubkey(1)=%s\n", global_tv_pubkey);
+	//}
 
 	Tox *tox = create_tox();
 	global_start_time = time(NULL);
