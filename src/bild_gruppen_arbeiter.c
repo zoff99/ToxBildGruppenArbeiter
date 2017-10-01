@@ -40,8 +40,8 @@
 // ----------- version -----------
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 99
-#define VERSION_PATCH 0
-static const char global_version_string[] = "0.99.0";
+#define VERSION_PATCH 1
+static const char global_version_string[] = "0.99.1";
 // ----------- version -----------
 // ----------- version -----------
 
@@ -52,7 +52,6 @@ static const char global_version_string[] = "0.99.0";
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define c_sleep(x) usleep(1000*x)
 #define DEFAULT_FPS_SLEEP_MS 250 // 250=4fps, 500=2fps, 160=6fps  // default video fps (sleep in msecs.)
-
 
 
 static uint64_t last_purge;
@@ -83,17 +82,13 @@ uint32_t friend_to_take_av_from = -1;
 uint8_t *global_tv_pubkey = NULL;
 
 
-
-
-typedef struct DHT_node {
+typedef struct DHT_node
+{
     const char *ip;
     uint16_t port;
-    const char key_hex[TOX_PUBLIC_KEY_SIZE*2 + 1];
+    const char key_hex[TOX_PUBLIC_KEY_SIZE * 2 + 1];
     unsigned char key_bin[TOX_PUBLIC_KEY_SIZE];
 } DHT_node;
-
-
-
 
 
 void dbg(int level, const char *fmt, ...)
@@ -179,7 +174,7 @@ time_t get_unix_time(void)
 
 void bin_to_hex_string(uint8_t *tox_id_bin, size_t tox_id_bin_len, char *toxid_str)
 {
-    char tox_id_hex_local[TOX_ADDRESS_SIZE*2 + 1];
+    char tox_id_hex_local[TOX_ADDRESS_SIZE * 2 + 1];
     CLEAR(tox_id_hex_local);
 
     // dbg(9, "bin_to_hex_string:sizeof(tox_id_hex_local)=%d\n", (int)sizeof(tox_id_hex_local));
@@ -187,21 +182,24 @@ void bin_to_hex_string(uint8_t *tox_id_bin, size_t tox_id_bin_len, char *toxid_s
 
     sodium_bin2hex(tox_id_hex_local, sizeof(tox_id_hex_local), tox_id_bin, tox_id_bin_len);
 
-    for (size_t i = 0; i < sizeof(tox_id_hex_local)-1; i ++)
+    for (size_t i = 0; i < sizeof(tox_id_hex_local) - 1; i++)
     {
         // dbg(9, "i=%d\n", i);
         tox_id_hex_local[i] = toupper(tox_id_hex_local[i]);
     }
 
-    snprintf(toxid_str, (size_t)(TOX_ADDRESS_SIZE*2 + 1), "%s", (const char*)tox_id_hex_local);
+    snprintf(toxid_str, (size_t) (TOX_ADDRESS_SIZE * 2 + 1), "%s", (const char *) tox_id_hex_local);
 }
 
 
 unsigned int char_to_int(char c)
 {
-    if (c >= '0' && c <= '9') return      c - '0';
-    if (c >= 'A' && c <= 'F') return 10 + c - 'A';
-    if (c >= 'a' && c <= 'f') return 10 + c - 'a';
+    if (c >= '0' && c <= '9')
+    { return c - '0'; }
+    if (c >= 'A' && c <= 'F')
+    { return 10 + c - 'A'; }
+    if (c >= 'a' && c <= 'f')
+    { return 10 + c - 'a'; }
     return -1;
 }
 
@@ -209,14 +207,14 @@ uint8_t *hex_string_to_bin(const char *hex_string)
 {
     size_t len = TOX_ADDRESS_SIZE;
     uint8_t *val = malloc(len);
-    memset(val, 0, (size_t)len);
+    memset(val, 0, (size_t) len);
 
     // dbg(9, "hex_string_to_bin:len=%d\n", (int)len);
 
     for (size_t i = 0; i != len; ++i)
     {
         // dbg(9, "hex_string_to_bin:%d %d\n", hex_string[2*i], hex_string[2*i+1]);
-        val[i] = (16 * char_to_int(hex_string[2*i])) + (char_to_int(hex_string[2*i+1]));
+        val[i] = (16 * char_to_int(hex_string[2 * i])) + (char_to_int(hex_string[2 * i + 1]));
         // dbg(9, "hex_string_to_bin:i=%d val[i]=%d\n", i, (int)val[i]);
     }
 
@@ -227,7 +225,7 @@ void update_savedata_file(const Tox *tox)
 {
     size_t size = tox_get_savedata_size(tox);
     char *savedata = malloc(size);
-    tox_get_savedata(tox, (uint8_t *)savedata);
+    tox_get_savedata(tox, (uint8_t *) savedata);
 
     FILE *f = fopen(savedata_tmp_filename, "wb");
     fwrite(savedata, size, 1, f);
@@ -241,7 +239,7 @@ void update_savedata_file(const Tox *tox)
 #if 0
 bool file_exists(const char *filename)
 {
-	return access(filename, 0) != -1;
+    return access(filename, 0) != -1;
 }
 #endif
 
@@ -332,16 +330,15 @@ void write_tvpubkey_to_file(uint8_t *tv_pubkey)
         }
 
         // dbg(9, "strlen(tv_pubkey)=%d\n", strlen(tv_pubkey));
-        char tv_pubkey_string[TOX_ADDRESS_SIZE*2 + 1];
+        char tv_pubkey_string[TOX_ADDRESS_SIZE * 2 + 1];
         CLEAR(tv_pubkey_string);
-        bin_to_hex_string(tv_pubkey, (size_t)TOX_ADDRESS_SIZE, tv_pubkey_string);
+        bin_to_hex_string(tv_pubkey, (size_t) TOX_ADDRESS_SIZE, tv_pubkey_string);
         // dbg(9, "tv_pubkey_string(0)=%s\n", tv_pubkey_string);
 
         int result = fputs(tv_pubkey_string, fp);
         fclose(fp);
     }
 }
-
 
 
 void friend_cleanup(Tox *tox)
@@ -430,7 +427,8 @@ void cb___self_connection_status(Tox *tox, TOX_CONNECTION connection_status, voi
     }
 }
 
-void cb___friend_request(Tox *tox, const uint8_t *public_key, const uint8_t *message, size_t length, void *user_data)
+void cb___friend_request(Tox *tox, const uint8_t *public_key, const uint8_t *message, size_t length,
+                         void *user_data)
 {
     TOX_ERR_FRIEND_ADD err;
     tox_friend_add_norequest(tox, public_key, &err);
@@ -447,7 +445,9 @@ void cb___friend_request(Tox *tox, const uint8_t *public_key, const uint8_t *mes
     update_savedata_file(tox);
 }
 
-void cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, const uint8_t *message, size_t length, void *user_data)
+void
+cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, const uint8_t *message,
+                    size_t length, void *user_data)
 {
     char dest_msg[length + 1];
     dest_msg[length] = '\0';
@@ -461,16 +461,20 @@ void cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type
 
         get_elapsed_time_str(time_str, sizeof(time_str), cur_time - global_start_time);
         snprintf(time_msg, sizeof(time_msg), "Uptime: %s", time_str);
-        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *)time_msg, strlen(time_msg), NULL);
+        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) time_msg,
+                                strlen(time_msg), NULL);
 
         char friend_msg[100];
-        snprintf(friend_msg, sizeof(friend_msg), "Friends: %zu (%d online)", tox_self_get_friend_list_size(tox), get_online_friend_count(tox));
-        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *)friend_msg, strlen(friend_msg), NULL);
+        snprintf(friend_msg, sizeof(friend_msg), "Friends: %zu (%d online)",
+                 tox_self_get_friend_list_size(tox), get_online_friend_count(tox));
+        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) friend_msg,
+                                strlen(friend_msg), NULL);
 
         const char *friend_info_msg = "Friends are removed after 1 month of inactivity";
-        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *)friend_info_msg, strlen(friend_info_msg), NULL);
+        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL,
+                                (uint8_t *) friend_info_msg, strlen(friend_info_msg), NULL);
     }
-    else if (!strncmp(".settv ", dest_msg, (size_t)6))
+    else if (!strncmp(".settv ", dest_msg, (size_t) 6))
     {
         // dbg(9, "strlen(dest_msg)=%d dest_msg=%s\n", (int)strlen(dest_msg), dest_msg);
         // dbg(9, "(TOX_ADDRESS_SIZE * 2) + 7=%d\n", (int)((TOX_ADDRESS_SIZE * 2) + 7));
@@ -493,7 +497,7 @@ void cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type
             }
         }
     }
-    else if (!strncmp(".deltv", dest_msg, (size_t)strlen(".deltv")))
+    else if (!strncmp(".deltv", dest_msg, (size_t) strlen(".deltv")))
     {
         if (global_tv_pubkey)
         {
@@ -520,11 +524,14 @@ void cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type
 .deltv                 Delete TV\n\
 .locksp                Lock current Speaker\n\
 .unlocksp              Unlock Speaker";
-        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t*) help_msg, strlen (help_msg), NULL);
+        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) help_msg,
+                                strlen(help_msg), NULL);
     }
 }
 
-void cb___file_recv(Tox *tox, uint32_t friend_number, uint32_t file_number, uint32_t kind, uint64_t file_size, const uint8_t *filename, size_t filename_length, void *user_data)
+void cb___file_recv(Tox *tox, uint32_t friend_number, uint32_t file_number, uint32_t kind,
+                    uint64_t file_size, const uint8_t *filename, size_t filename_length,
+                    void *user_data)
 {
     if (kind == TOX_FILE_KIND_AVATAR)
     {
@@ -534,13 +541,16 @@ void cb___file_recv(Tox *tox, uint32_t friend_number, uint32_t file_number, uint
     tox_file_control(tox, friend_number, file_number, TOX_FILE_CONTROL_CANCEL, NULL);
 
     const char *msg = "Sorry, I don't support file transfers.";
-    tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t*)msg, strlen(msg), NULL);
+    tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) msg,
+                            strlen(msg), NULL);
 }
 
-void cb___call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool video_enabled, void *user_data)
+void cb___call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool video_enabled,
+               void *user_data)
 {
     TOXAV_ERR_ANSWER err;
-    toxav_answer(toxAV, friend_number, audio_enabled ? audio_bitrate : 0, video_enabled ? video_bitrate : 0, &err);
+    toxav_answer(toxAV, friend_number, audio_enabled ? audio_bitrate : 0,
+                 video_enabled ? video_bitrate : 0, &err);
 
     if (err != TOXAV_ERR_ANSWER_OK)
     {
@@ -561,14 +571,19 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
         return;
     }
 
-    bool send_audio = (state & TOXAV_FRIEND_CALL_STATE_SENDING_A) && (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_A);
-    bool send_video = state & TOXAV_FRIEND_CALL_STATE_SENDING_V && (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_V);
+    bool send_audio = (state & TOXAV_FRIEND_CALL_STATE_SENDING_A) &&
+                      (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_A);
+    bool send_video = state & TOXAV_FRIEND_CALL_STATE_SENDING_V &&
+                      (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_V);
     // ** deactviated ** // toxav_bit_rate_set(toxAV, friend_number, send_audio ? audio_bitrate : 0, send_video ? video_bitrate : 0, NULL);
 
-    printf("Call state for friend %d changed to %d: audio: %d, video: %d\n", friend_number, state, send_audio, send_video);
+    printf("Call state for friend %d changed to %d: audio: %d, video: %d\n", friend_number, state,
+           send_audio, send_video);
 }
 
-void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_t *pcm, size_t sample_count, uint8_t channels, uint32_t sampling_rate, void *user_data)
+void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_t *pcm,
+                              size_t sample_count, uint8_t channels, uint32_t sampling_rate,
+                              void *user_data)
 {
     TOXAV_ERR_SEND_FRAME err;
 
@@ -586,7 +601,9 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
 
 }
 
-void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t width, uint16_t height, const uint8_t *y, const uint8_t *u, const uint8_t *v, int32_t ystride, int32_t ustride, int32_t vstride, void *user_data)
+void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t width, uint16_t height,
+                              const uint8_t *y, const uint8_t *u, const uint8_t *v, int32_t ystride,
+                              int32_t ustride, int32_t vstride, void *user_data)
 {
     ystride = abs(ystride);
     ustride = abs(ustride);
@@ -598,9 +615,9 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
         return;
     }
 
-    uint8_t *y_dest = (uint8_t*)malloc(width * height);
-    uint8_t *u_dest = (uint8_t*)malloc(width * height / 2);
-    uint8_t *v_dest = (uint8_t*)malloc(width * height / 2);
+    uint8_t *y_dest = (uint8_t *) malloc(width * height);
+    uint8_t *u_dest = (uint8_t *) malloc(width * height / 2);
+    uint8_t *v_dest = (uint8_t *) malloc(width * height / 2);
 
     for (size_t h = 0; h < height; h++)
     {
@@ -633,9 +650,11 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
 }
 
 
-void tox_log_cb__custom(Tox *tox, TOX_LOG_LEVEL level, const char *file, uint32_t line, const char *func, const char *message, void *user_data)
+void
+tox_log_cb__custom(Tox *tox, TOX_LOG_LEVEL level, const char *file, uint32_t line, const char *func,
+                   const char *message, void *user_data)
 {
-    dbg(9, "%d:%s:%d:%s:%s\n", (int)level, file, (int)line, func, message);
+    dbg(9, "%d:%s:%d:%s:%s\n", (int) level, file, (int) line, func, message);
 }
 
 
@@ -686,7 +705,7 @@ Tox *create_tox()
         const char *proxy_host = "127.0.0.1";
         dbg(0, "setting proxy_host %s\n", proxy_host);
         uint16_t proxy_port = PROXY_PORT_TOR_DEFAULT;
-        dbg(0, "setting proxy_port %d\n", (int)proxy_port);
+        dbg(0, "setting proxy_port %d\n", (int) proxy_port);
         options.proxy_type = TOX_PROXY_TYPE_SOCKS5;
         options.proxy_host = proxy_host;
         options.proxy_port = proxy_port;
@@ -724,7 +743,7 @@ Tox *create_tox()
 
         tox = tox_new(&options, NULL);
 
-        free((void *)savedata);
+        free((void *) savedata);
     }
     else
     {
@@ -732,7 +751,7 @@ Tox *create_tox()
     }
 
     bool local_discovery_enabled = tox_options_get_local_discovery_enabled(&options);
-    dbg(9, "local discovery enabled = %d\n", (int)local_discovery_enabled);
+    dbg(9, "local discovery enabled = %d\n", (int) local_discovery_enabled);
 
     return tox;
 }
@@ -749,7 +768,7 @@ void shuffle(int *array, size_t n)
         size_t i;
         for (i = n - 1; i > 0; i--)
         {
-            size_t j = (unsigned int) (drand48()*(i+1));
+            size_t j = (unsigned int) (drand48() * (i + 1));
             int t = array[j];
             array[j] = array[i];
             array[i] = t;
@@ -764,19 +783,19 @@ void bootstap_nodes(Tox *tox, DHT_node nodes[], int number_of_nodes, int add_as_
     bool res = 0;
     size_t i = 0;
     int random_order_nodenums[number_of_nodes];
-    for (size_t j = 0; (int)j < (int)number_of_nodes; j++)
+    for (size_t j = 0; (int) j < (int) number_of_nodes; j++)
     {
-        random_order_nodenums[j] = (int)j;
+        random_order_nodenums[j] = (int) j;
     }
 
     shuffle(random_order_nodenums, number_of_nodes);
 
-    for (size_t j = 0; (int)j < (int)number_of_nodes; j++)
+    for (size_t j = 0; (int) j < (int) number_of_nodes; j++)
     {
-        i = (size_t)random_order_nodenums[j];
+        i = (size_t) random_order_nodenums[j];
 
         res = sodium_hex2bin(nodes[i].key_bin, sizeof(nodes[i].key_bin),
-                             nodes[i].key_hex, sizeof(nodes[i].key_hex)-1, NULL, NULL, NULL);
+                             nodes[i].key_hex, sizeof(nodes[i].key_hex) - 1, NULL, NULL, NULL);
         // dbg(9, "sodium_hex2bin:res=%d\n", res);
 
         TOX_ERR_BOOTSTRAP error;
@@ -807,7 +826,8 @@ void bootstap_nodes(Tox *tox, DHT_node nodes[], int number_of_nodes, int add_as_
 
         if (add_as_tcp_relay == 1)
         {
-            res = tox_add_tcp_relay(tox, nodes[i].ip, nodes[i].port, nodes[i].key_bin, &error); // use also as TCP relay
+            res = tox_add_tcp_relay(tox, nodes[i].ip, nodes[i].port, nodes[i].key_bin,
+                                    &error); // use also as TCP relay
             if (res != true)
             {
                 if (error == TOX_ERR_BOOTSTRAP_OK)
@@ -846,100 +866,98 @@ void bootstrap(Tox *tox)
     // these nodes seem to be faster!!
     DHT_node nodes1[] =
             {
-                    {"178.62.250.138",             33445, "788236D34978D1D5BD822F0A5BEBD2C53C64CC31CD3149350EE27D4D9A2F9B6B", {0}},
-                    {"51.15.37.145",             33445, "6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E", {0}},
-                    {"130.133.110.14",             33445, "461FA3776EF0FA655F1A05477DF1B3B614F7D6B124F7DB1DD4FE3C08B03B640F", {0}},
-                    {"23.226.230.47",         33445, "A09162D68618E742FFBCA1C2C70385E6679604B2D80EA6E84AD0996A1AC8A074", {0}},
-                    {"163.172.136.118",            33445, "2C289F9F37C20D09DA83565588BF496FAB3764853FA38141817A72E3F18ACA0B", {0}},
-                    {"217.182.143.254",             443, "7AED21F94D82B05774F697B209628CD5A9AD17E0C073D9329076A4C28ED28147", {0}},
-                    {"185.14.30.213",               443,  "2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B", {0}},
-                    {"136.243.141.187",             443,  "6EE1FADE9F55CC7938234CC07C864081FC606D8FE7B751EDA217F268F1078A39", {0}},
-                    {"128.199.199.197",            33445, "B05C8869DBB4EDDD308F43C1A974A20A725A36EACCA123862FDE9945BF9D3E09", {0}},
-                    {"198.46.138.44",               33445, "F404ABAA1C99A9D37D61AB54898F56793E1DEF8BD46B1038B9D822E8460FAB67", {0}}
+                    {"178.62.250.138",  33445, "788236D34978D1D5BD822F0A5BEBD2C53C64CC31CD3149350EE27D4D9A2F9B6B", {0}},
+                    {"51.15.37.145",    33445, "6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E", {0}},
+                    {"130.133.110.14",  33445, "461FA3776EF0FA655F1A05477DF1B3B614F7D6B124F7DB1DD4FE3C08B03B640F", {0}},
+                    {"23.226.230.47",   33445, "A09162D68618E742FFBCA1C2C70385E6679604B2D80EA6E84AD0996A1AC8A074", {0}},
+                    {"163.172.136.118", 33445, "2C289F9F37C20D09DA83565588BF496FAB3764853FA38141817A72E3F18ACA0B", {0}},
+                    {"217.182.143.254", 443,   "7AED21F94D82B05774F697B209628CD5A9AD17E0C073D9329076A4C28ED28147", {0}},
+                    {"185.14.30.213",   443,   "2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B", {0}},
+                    {"136.243.141.187", 443,   "6EE1FADE9F55CC7938234CC07C864081FC606D8FE7B751EDA217F268F1078A39", {0}},
+                    {"128.199.199.197", 33445, "B05C8869DBB4EDDD308F43C1A974A20A725A36EACCA123862FDE9945BF9D3E09", {0}},
+                    {"198.46.138.44",   33445, "F404ABAA1C99A9D37D61AB54898F56793E1DEF8BD46B1038B9D822E8460FAB67", {0}}
             };
 
 
     // more nodes here, but maybe some issues
     DHT_node nodes2[] =
             {
-                    {"178.62.250.138",             33445, "788236D34978D1D5BD822F0A5BEBD2C53C64CC31CD3149350EE27D4D9A2F9B6B", {0}},
-                    {"136.243.141.187",             443,  "6EE1FADE9F55CC7938234CC07C864081FC606D8FE7B751EDA217F268F1078A39", {0}},
-                    {"185.14.30.213",               443,  "2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B", {0}},
-                    {"198.46.138.44",33445,"F404ABAA1C99A9D37D61AB54898F56793E1DEF8BD46B1038B9D822E8460FAB67", {0}},
-                    {"51.15.37.145",33445,"6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E", {0}},
-                    {"130.133.110.14",33445,"461FA3776EF0FA655F1A05477DF1B3B614F7D6B124F7DB1DD4FE3C08B03B640F", {0}},
-                    {"205.185.116.116",33445,"A179B09749AC826FF01F37A9613F6B57118AE014D4196A0E1105A98F93A54702", {0}},
-                    {"198.98.51.198",33445,"1D5A5F2F5D6233058BF0259B09622FB40B482E4FA0931EB8FD3AB8E7BF7DAF6F", {0}},
-                    {"108.61.165.198",33445,"8E7D0B859922EF569298B4D261A8CCB5FEA14FB91ED412A7603A585A25698832", {0}},
-                    {"194.249.212.109",33445,"3CEE1F054081E7A011234883BC4FC39F661A55B73637A5AC293DDF1251D9432B", {0}},
-                    {"185.25.116.107",33445,"DA4E4ED4B697F2E9B000EEFE3A34B554ACD3F45F5C96EAEA2516DD7FF9AF7B43", {0}},
-                    {"5.189.176.217",5190,"2B2137E094F743AC8BD44652C55F41DFACC502F125E99E4FE24D40537489E32F", {0}},
-                    {"217.182.143.254",2306,"7AED21F94D82B05774F697B209628CD5A9AD17E0C073D9329076A4C28ED28147", {0}},
-                    {"104.223.122.15",33445,"0FB96EEBFB1650DDB52E70CF773DDFCABE25A95CC3BB50FC251082E4B63EF82A", {0}},
-                    {"tox.verdict.gg",33445,"1C5293AEF2114717547B39DA8EA6F1E331E5E358B35F9B6B5F19317911C5F976", {0}},
-                    {"d4rk4.ru",1813,"53737F6D47FA6BD2808F378E339AF45BF86F39B64E79D6D491C53A1D522E7039", {0}},
-                    {"104.233.104.126",33445,"EDEE8F2E839A57820DE3DA4156D88350E53D4161447068A3457EE8F59F362414", {0}},
-                    {"51.254.84.212",33445,"AEC204B9A4501412D5F0BB67D9C81B5DB3EE6ADA64122D32A3E9B093D544327D", {0}},
-                    {"88.99.133.52",33445,"2D320F971EF2CA18004416C2AAE7BA52BF7949DB34EA8E2E21AF67BD367BE211", {0}},
-                    {"185.58.206.164",33445,"24156472041E5F220D1FA11D9DF32F7AD697D59845701CDD7BE7D1785EB9DB39", {0}},
-                    {"92.54.84.70",33445,"5625A62618CB4FCA70E147A71B29695F38CC65FF0CBD68AD46254585BE564802", {0}},
-                    {"195.93.190.6",33445,"FB4CE0DDEFEED45F26917053E5D24BDDA0FA0A3D83A672A9DA2375928B37023D", {0}},
-                    {"tox.uplinklabs.net",33445,"1A56EA3EDF5DF4C0AEABBF3C2E4E603890F87E983CAC8A0D532A335F2C6E3E1F", {0}},
-                    {"toxnode.nek0.net",33445,"20965721D32CE50C3E837DD75B33908B33037E6225110BFF209277AEAF3F9639", {0}},
-                    {"95.215.44.78",33445,"672DBE27B4ADB9D5FB105A6BB648B2F8FDB89B3323486A7A21968316E012023C", {0}},
-                    {"163.172.136.118",33445,"2C289F9F37C20D09DA83565588BF496FAB3764853FA38141817A72E3F18ACA0B", {0}},
-                    {"sorunome.de",33445,"02807CF4F8BB8FB390CC3794BDF1E8449E9A8392C5D3F2200019DA9F1E812E46", {0}},
-                    {"37.97.185.116",33445,"E59A0E71ADA20D35BD1B0957059D7EF7E7792B3D680AE25C6F4DBBA09114D165", {0}},
-                    {"193.124.186.205",5228,"9906D65F2A4751068A59D30505C5FC8AE1A95E0843AE9372EAFA3BAB6AC16C2C", {0}},
-                    {"80.87.193.193",33445,"B38255EE4B054924F6D79A5E6E5889EC94B6ADF6FE9906F97A3D01E3D083223A", {0}},
-                    {"initramfs.io",33445,"3F0A45A268367C1BEA652F258C85F4A66DA76BCAA667A49E770BCC4917AB6A25", {0}},
-                    {"hibiki.eve.moe",33445,"D3EB45181B343C2C222A5BCF72B760638E15ED87904625AAD351C594EEFAE03E", {0}},
-                    {"tox.deadteam.org",33445,"C7D284129E83877D63591F14B3F658D77FF9BA9BA7293AEB2BDFBFE1A803AF47", {0}},
-                    {"46.229.52.198",33445,"813C8F4187833EF0655B10F7752141A352248462A567529A38B6BBF73E979307", {0}},
-                    {"node.tox.ngc.network",33445,"A856243058D1DE633379508ADCAFCF944E40E1672FF402750EF712E30C42012A", {0}},
-                    {"144.217.86.39",33445,"7E5668E0EE09E19F320AD47902419331FFEE147BB3606769CFBE921A2A2FD34C", {0}},
-                    {"185.14.30.213",443,"2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B", {0}},
-                    {"77.37.160.178",33440,"CE678DEAFA29182EFD1B0C5B9BC6999E5A20B50A1A6EC18B91C8EBB591712416", {0}},
-                    {"85.21.144.224",33445,"8F738BBC8FA9394670BCAB146C67A507B9907C8E564E28C2B59BEBB2FF68711B", {0}},
-                    {"tox.natalenko.name",33445,"1CB6EBFD9D85448FA70D3CAE1220B76BF6FCE911B46ACDCF88054C190589650B", {0}},
-                    {"37.187.122.30",33445,"BEB71F97ED9C99C04B8489BB75579EB4DC6AB6F441B603D63533122F1858B51D", {0}},
-                    {"completelyunoriginal.moe",33445,"FBC7DED0B0B662D81094D91CC312D6CDF12A7B16C7FFB93817143116B510C13E", {0}},
-                    {"136.243.141.187",443,"6EE1FADE9F55CC7938234CC07C864081FC606D8FE7B751EDA217F268F1078A39", {0}},
-                    {"tox.abilinski.com",33445,"0E9D7FEE2AA4B42A4C18FE81C038E32FFD8D907AAA7896F05AA76C8D31A20065", {0}},
-                    {"95.215.46.114",33445,"5823FB947FF24CF83DDFAC3F3BAA18F96EA2018B16CC08429CB97FA502F40C23", {0}},
-                    {"51.15.54.207",33445,"1E64DBA45EC810C0BF3A96327DC8A9D441AB262C14E57FCE11ECBCE355305239", {0}}
+                    {"178.62.250.138",           33445, "788236D34978D1D5BD822F0A5BEBD2C53C64CC31CD3149350EE27D4D9A2F9B6B", {0}},
+                    {"136.243.141.187",          443,   "6EE1FADE9F55CC7938234CC07C864081FC606D8FE7B751EDA217F268F1078A39", {0}},
+                    {"185.14.30.213",            443,   "2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B", {0}},
+                    {"198.46.138.44",            33445, "F404ABAA1C99A9D37D61AB54898F56793E1DEF8BD46B1038B9D822E8460FAB67", {0}},
+                    {"51.15.37.145",             33445, "6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E", {0}},
+                    {"130.133.110.14",           33445, "461FA3776EF0FA655F1A05477DF1B3B614F7D6B124F7DB1DD4FE3C08B03B640F", {0}},
+                    {"205.185.116.116",          33445, "A179B09749AC826FF01F37A9613F6B57118AE014D4196A0E1105A98F93A54702", {0}},
+                    {"198.98.51.198",            33445, "1D5A5F2F5D6233058BF0259B09622FB40B482E4FA0931EB8FD3AB8E7BF7DAF6F", {0}},
+                    {"108.61.165.198",           33445, "8E7D0B859922EF569298B4D261A8CCB5FEA14FB91ED412A7603A585A25698832", {0}},
+                    {"194.249.212.109",          33445, "3CEE1F054081E7A011234883BC4FC39F661A55B73637A5AC293DDF1251D9432B", {0}},
+                    {"185.25.116.107",           33445, "DA4E4ED4B697F2E9B000EEFE3A34B554ACD3F45F5C96EAEA2516DD7FF9AF7B43", {0}},
+                    {"5.189.176.217",            5190,  "2B2137E094F743AC8BD44652C55F41DFACC502F125E99E4FE24D40537489E32F", {0}},
+                    {"217.182.143.254",          2306,  "7AED21F94D82B05774F697B209628CD5A9AD17E0C073D9329076A4C28ED28147", {0}},
+                    {"104.223.122.15",           33445, "0FB96EEBFB1650DDB52E70CF773DDFCABE25A95CC3BB50FC251082E4B63EF82A", {0}},
+                    {"tox.verdict.gg",           33445, "1C5293AEF2114717547B39DA8EA6F1E331E5E358B35F9B6B5F19317911C5F976", {0}},
+                    {"d4rk4.ru",                 1813,  "53737F6D47FA6BD2808F378E339AF45BF86F39B64E79D6D491C53A1D522E7039", {0}},
+                    {"104.233.104.126",          33445, "EDEE8F2E839A57820DE3DA4156D88350E53D4161447068A3457EE8F59F362414", {0}},
+                    {"51.254.84.212",            33445, "AEC204B9A4501412D5F0BB67D9C81B5DB3EE6ADA64122D32A3E9B093D544327D", {0}},
+                    {"88.99.133.52",             33445, "2D320F971EF2CA18004416C2AAE7BA52BF7949DB34EA8E2E21AF67BD367BE211", {0}},
+                    {"185.58.206.164",           33445, "24156472041E5F220D1FA11D9DF32F7AD697D59845701CDD7BE7D1785EB9DB39", {0}},
+                    {"92.54.84.70",              33445, "5625A62618CB4FCA70E147A71B29695F38CC65FF0CBD68AD46254585BE564802", {0}},
+                    {"195.93.190.6",             33445, "FB4CE0DDEFEED45F26917053E5D24BDDA0FA0A3D83A672A9DA2375928B37023D", {0}},
+                    {"tox.uplinklabs.net",       33445, "1A56EA3EDF5DF4C0AEABBF3C2E4E603890F87E983CAC8A0D532A335F2C6E3E1F", {0}},
+                    {"toxnode.nek0.net",         33445, "20965721D32CE50C3E837DD75B33908B33037E6225110BFF209277AEAF3F9639", {0}},
+                    {"95.215.44.78",             33445, "672DBE27B4ADB9D5FB105A6BB648B2F8FDB89B3323486A7A21968316E012023C", {0}},
+                    {"163.172.136.118",          33445, "2C289F9F37C20D09DA83565588BF496FAB3764853FA38141817A72E3F18ACA0B", {0}},
+                    {"sorunome.de",              33445, "02807CF4F8BB8FB390CC3794BDF1E8449E9A8392C5D3F2200019DA9F1E812E46", {0}},
+                    {"37.97.185.116",            33445, "E59A0E71ADA20D35BD1B0957059D7EF7E7792B3D680AE25C6F4DBBA09114D165", {0}},
+                    {"193.124.186.205",          5228,  "9906D65F2A4751068A59D30505C5FC8AE1A95E0843AE9372EAFA3BAB6AC16C2C", {0}},
+                    {"80.87.193.193",            33445, "B38255EE4B054924F6D79A5E6E5889EC94B6ADF6FE9906F97A3D01E3D083223A", {0}},
+                    {"initramfs.io",             33445, "3F0A45A268367C1BEA652F258C85F4A66DA76BCAA667A49E770BCC4917AB6A25", {0}},
+                    {"hibiki.eve.moe",           33445, "D3EB45181B343C2C222A5BCF72B760638E15ED87904625AAD351C594EEFAE03E", {0}},
+                    {"tox.deadteam.org",         33445, "C7D284129E83877D63591F14B3F658D77FF9BA9BA7293AEB2BDFBFE1A803AF47", {0}},
+                    {"46.229.52.198",            33445, "813C8F4187833EF0655B10F7752141A352248462A567529A38B6BBF73E979307", {0}},
+                    {"node.tox.ngc.network",     33445, "A856243058D1DE633379508ADCAFCF944E40E1672FF402750EF712E30C42012A", {0}},
+                    {"144.217.86.39",            33445, "7E5668E0EE09E19F320AD47902419331FFEE147BB3606769CFBE921A2A2FD34C", {0}},
+                    {"185.14.30.213",            443,   "2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B", {0}},
+                    {"77.37.160.178",            33440, "CE678DEAFA29182EFD1B0C5B9BC6999E5A20B50A1A6EC18B91C8EBB591712416", {0}},
+                    {"85.21.144.224",            33445, "8F738BBC8FA9394670BCAB146C67A507B9907C8E564E28C2B59BEBB2FF68711B", {0}},
+                    {"tox.natalenko.name",       33445, "1CB6EBFD9D85448FA70D3CAE1220B76BF6FCE911B46ACDCF88054C190589650B", {0}},
+                    {"37.187.122.30",            33445, "BEB71F97ED9C99C04B8489BB75579EB4DC6AB6F441B603D63533122F1858B51D", {0}},
+                    {"completelyunoriginal.moe", 33445, "FBC7DED0B0B662D81094D91CC312D6CDF12A7B16C7FFB93817143116B510C13E", {0}},
+                    {"136.243.141.187",          443,   "6EE1FADE9F55CC7938234CC07C864081FC606D8FE7B751EDA217F268F1078A39", {0}},
+                    {"tox.abilinski.com",        33445, "0E9D7FEE2AA4B42A4C18FE81C038E32FFD8D907AAA7896F05AA76C8D31A20065", {0}},
+                    {"95.215.46.114",            33445, "5823FB947FF24CF83DDFAC3F3BAA18F96EA2018B16CC08429CB97FA502F40C23", {0}},
+                    {"51.15.54.207",             33445, "1E64DBA45EC810C0BF3A96327DC8A9D441AB262C14E57FCE11ECBCE355305239", {0}}
             };
 
     // only nodes.tox.chat
     DHT_node nodes3[] =
             {
-                    {"51.15.37.145",             33445, "6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E", {0}}
+                    {"51.15.37.145", 33445, "6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E", {0}}
             };
 
 
     if (switch_nodelist_2 == 0)
     {
         dbg(9, "nodeslist:1\n");
-        bootstap_nodes(tox, &nodes1, (int)(sizeof(nodes1)/sizeof(DHT_node)), 1);
+        bootstap_nodes(tox, &nodes1, (int) (sizeof(nodes1) / sizeof(DHT_node)), 1);
     }
     else if (switch_nodelist_2 == 2)
     {
         dbg(9, "nodeslist:3\n");
-        bootstap_nodes(tox, &nodes3, (int)(sizeof(nodes3)/sizeof(DHT_node)), 0);
+        bootstap_nodes(tox, &nodes3, (int) (sizeof(nodes3) / sizeof(DHT_node)), 0);
     }
     else // (switch_nodelist_2 == 1)
     {
         dbg(9, "nodeslist:2\n");
-        bootstap_nodes(tox, &nodes2, (int)(sizeof(nodes2)/sizeof(DHT_node)), 1);
+        bootstap_nodes(tox, &nodes2, (int) (sizeof(nodes2) / sizeof(DHT_node)), 1);
     }
 }
 
 
-
-
 void *thread_av(void *data)
 {
-    ToxAV *av = (ToxAV *)data;
+    ToxAV *av = (ToxAV *) data;
 
     pthread_t id = pthread_self();
     pthread_mutex_t av_thread_lock;
@@ -977,10 +995,6 @@ void *thread_av(void *data)
 }
 
 
-
-
-
-
 void *thread_video_av(void *data)
 {
     ToxAV *av = (ToxAV *) data;
@@ -1012,9 +1026,6 @@ void *thread_video_av(void *data)
 }
 
 
-
-
-
 // fill string with toxid in upper case hex.
 // size of toxid_str needs to be: [TOX_ADDRESS_SIZE*2 + 1] !!
 void get_my_toxid(Tox *tox, char *toxid_str)
@@ -1022,17 +1033,16 @@ void get_my_toxid(Tox *tox, char *toxid_str)
     uint8_t tox_id_bin[TOX_ADDRESS_SIZE];
     tox_self_get_address(tox, tox_id_bin);
 
-    char tox_id_hex_local[TOX_ADDRESS_SIZE*2 + 1];
+    char tox_id_hex_local[TOX_ADDRESS_SIZE * 2 + 1];
     sodium_bin2hex(tox_id_hex_local, sizeof(tox_id_hex_local), tox_id_bin, sizeof(tox_id_bin));
 
-    for (size_t i = 0; i < sizeof(tox_id_hex_local)-1; i ++)
+    for (size_t i = 0; i < sizeof(tox_id_hex_local) - 1; i++)
     {
         tox_id_hex_local[i] = toupper(tox_id_hex_local[i]);
     }
 
-    snprintf(toxid_str, (size_t)(TOX_ADDRESS_SIZE*2 + 1), "%s", (const char*)tox_id_hex_local);
+    snprintf(toxid_str, (size_t) (TOX_ADDRESS_SIZE * 2 + 1), "%s", (const char *) tox_id_hex_local);
 }
-
 
 
 void reconnect(Tox *tox)
@@ -1076,7 +1086,6 @@ void reconnect(Tox *tox)
 }
 
 
-
 void check_online_status(Tox *tox)
 {
     if (my_connection_status == TOX_CONNECTION_NONE)
@@ -1092,7 +1101,7 @@ void check_online_status(Tox *tox)
 
 void print_tox_id(Tox *tox)
 {
-    char tox_id_hex[TOX_ADDRESS_SIZE*2 + 1];
+    char tox_id_hex[TOX_ADDRESS_SIZE * 2 + 1];
     get_my_toxid(tox, tox_id_hex);
 
     if (logfile)
@@ -1136,8 +1145,8 @@ int main(int argc, char *argv[])
     Tox *tox = create_tox();
     global_start_time = time(NULL);
 
-    tox_self_set_name(tox, (uint8_t *)bot_name, strlen(bot_name), NULL);
-    tox_self_set_status_message(tox, (uint8_t *)bot_status_msg, strlen(bot_status_msg), NULL);
+    tox_self_set_name(tox, (uint8_t *) bot_name, strlen(bot_name), NULL);
+    tox_self_set_status_message(tox, (uint8_t *) bot_status_msg, strlen(bot_status_msg), NULL);
 
     bootstrap(tox);
 
@@ -1204,7 +1213,7 @@ int main(int argc, char *argv[])
     pthread_t tid[2]; // 0 -> toxav_iterate thread, 1 -> video send thread
 
     toxav_iterate_thread_stop = 0;
-    if (pthread_create(&(tid[0]), NULL, thread_av, (void *)mytox_av) != 0)
+    if (pthread_create(&(tid[0]), NULL, thread_av, (void *) mytox_av) != 0)
     {
         dbg(0, "AV iterate Thread create failed");
     }
@@ -1214,7 +1223,7 @@ int main(int argc, char *argv[])
     }
 
     toxav_video_thread_stop = 0;
-    if (pthread_create(&(tid[1]), NULL, thread_video_av, (void *)mytox_av) != 0)
+    if (pthread_create(&(tid[1]), NULL, thread_video_av, (void *) mytox_av) != 0)
     {
         dbg(0, "AV video Thread create failed");
     }
