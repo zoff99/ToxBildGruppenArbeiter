@@ -210,7 +210,7 @@ test:
     - cd src ; gcc -O2 -fPIC -o "$BINARIUM_BIN" "$BINARIUM_SRC" -std=gnu99 -lsodium -I/usr/local/include/ -ltoxcore -ltoxav -lpthread -lvpx
     - cd src ; ldd "$BINARIUM_BIN" ; exit 0
     - find / -name '*libjpeg*' 2> /dev/null ; exit 0
-    - cd src ; gcc -O2 -Wall -Wextra -Wpedantic -o "$BINARIUM_BIN"_static "$BINARIUM_SRC" -static -std=gnu99 -L/usr/local/lib -I/usr/local/include/ -lsodium -ltoxcore -ltoxav -ltoxgroup -ltoxmessenger -ltoxfriends -ltoxnetcrypto -ltoxdht -ltoxnetwork -ltoxcrypto -lsodium -lpthread -static-libgcc -static-libstdc++ -lopus -lvpx -lm -lpthread -lm -lrt
+    - cd src ; gcc -O2 -Wall -o "$BINARIUM_BIN"_static "$BINARIUM_SRC" -static -std=gnu99 -L/usr/local/lib -I/usr/local/include/ -lsodium -ltoxcore -ltoxav -ltoxgroup -ltoxmessenger -ltoxfriends -ltoxnetcrypto -ltoxdht -ltoxnetwork -ltoxcrypto -lsodium -lpthread -static-libgcc -static-libstdc++ -lopus -lvpx -lm -lpthread -lm -lrt
     - cd src ; ls -al "$BINARIUM_BIN" "$BINARIUM_BIN"_static
     - mkdir -p $CIRCLE_ARTIFACTS/ubuntu_14_04_binaries/
     - cp -av src/"$BINARIUM_BIN" $CIRCLE_ARTIFACTS/ubuntu_14_04_binaries/
