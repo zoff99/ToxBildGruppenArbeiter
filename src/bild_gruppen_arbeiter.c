@@ -9,12 +9,18 @@
  */
 
 #include <pthread.h>
+#include <time.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <signal.h>
 #include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 #include <stdbool.h>
 
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/ioctl.h>
 
 // --- tweak in A.S. ---
 // --- tweak in A.S. ---
@@ -22,6 +28,9 @@
 #include "tox/toxav.h"
 #include "sodium.h"
 
+#include <tox/tox.h>
+#include <tox/toxav.h>
+#include <sodium.h>
 // --- tweak in A.S. ---
 // --- tweak in A.S. ---
 
