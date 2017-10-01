@@ -40,8 +40,8 @@
 // ----------- version -----------
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 99
-#define VERSION_PATCH 1
-static const char global_version_string[] = "0.99.1";
+#define VERSION_PATCH 2
+static const char global_version_string[] = "0.99.2";
 // ----------- version -----------
 // ----------- version -----------
 
@@ -266,7 +266,7 @@ void send_text_message_to_friend(Tox *tox, uint32_t friend_number, const char *f
 
     if (fmt == NULL)
     {
-        dbg(9, "send_text_message_to_friend:no message to send\n");
+        dbg(9, "send_text_message_to_friend:no message to send");
         return;
     }
 
@@ -355,31 +355,31 @@ void start_av_call_to_tv(Tox *tox, uint32_t friendnum)
                 switch (error)
                 {
                     case TOXAV_ERR_CALL_MALLOC:
-                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_MALLOC\n");
+                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_MALLOC");
                         break;
 
                     case TOXAV_ERR_CALL_SYNC:
-                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_SYNC\n");
+                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_SYNC");
                         break;
 
                     case TOXAV_ERR_CALL_FRIEND_NOT_FOUND:
-                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_NOT_FOUND\n");
+                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_NOT_FOUND");
                         break;
 
                     case TOXAV_ERR_CALL_FRIEND_NOT_CONNECTED:
-                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_NOT_CONNECTED\n");
+                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_NOT_CONNECTED");
                         break;
 
                     case TOXAV_ERR_CALL_FRIEND_ALREADY_IN_CALL:
-                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_ALREADY_IN_CALL\n");
+                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_ALREADY_IN_CALL");
                         break;
 
                     case TOXAV_ERR_CALL_INVALID_BIT_RATE:
-                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_INVALID_BIT_RATE\n");
+                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_INVALID_BIT_RATE");
                         break;
 
                     default:
-                        dbg(0, "toxav_call (1):*unknown error*\n");
+                        dbg(0, "toxav_call (1):*unknown error*");
                         break;
                 }
             }
@@ -401,7 +401,7 @@ void invite_tv_as_friend(Tox *tox, uint8_t *tox_id_tv_bin)
     int64_t fnum_tv = friend_number_for_tv(tox, tox_id_tv_bin);
     if (fnum_tv == -1)
     {
-        dbg(9, "TV not on friendlist, inviting ...\n");
+        dbg(9, "TV not on friendlist, inviting ...");
         const char *message_str = "invite ...";
         TOX_ERR_FRIEND_ADD error;
         uint32_t friendnum = tox_friend_add(tox, (uint8_t *) tox_id_tv_bin,
@@ -427,7 +427,7 @@ void invite_tv_as_friend(Tox *tox, uint8_t *tox_id_tv_bin)
     }
     else
     {
-        dbg(9, "TV already a friend\n");
+        dbg(9, "TV already a friend");
     }
 }
 
@@ -470,12 +470,12 @@ void create_tv_file_if_not_exists()
 
         if (fp == NULL)
         {
-            dbg(1, "Warning: failed to create tv_pubkey_filename file\n");
+            dbg(1, "Warning: failed to create tv_pubkey_filename file");
             return;
         }
 
         fclose(fp);
-        dbg(1, "Warning: creating new tv_pubkey_filename file. Did you lose the old one?\n");
+        dbg(1, "Warning: creating new tv_pubkey_filename file. Did you lose the old one?");
     }
 }
 
@@ -487,7 +487,7 @@ void read_tvpubkey_from_file(uint8_t *tv_pubkey)
     FILE *fp = fopen(tv_pubkey_filename, "r");
     if (fp == NULL)
     {
-        dbg(1, "Warning: failed to read tv_pubkey_filename file\n");
+        dbg(1, "Warning: failed to read tv_pubkey_filename file");
         return;
     }
 
@@ -521,7 +521,7 @@ void write_tvpubkey_to_file(uint8_t *tv_pubkey)
         FILE *fp = fopen(tv_pubkey_filename, "wb");
         if (fp == NULL)
         {
-            dbg(1, "Warning: failed to read tv_pubkey_filename file\n");
+            dbg(1, "Warning: failed to read tv_pubkey_filename file");
             return;
         }
 
@@ -558,13 +558,13 @@ void friend_cleanup(Tox *tox)
 
         if (err != TOX_ERR_FRIEND_GET_LAST_ONLINE_OK)
         {
-            printf("couldn't obtain 'last online', this should never happen\n");
+            dbg(9, "couldn't obtain 'last online', this should never happen");
             continue;
         }
 
         if (curr_time - last_online > 2629743)
         {
-            printf("removing friend %d\n", friend);
+            dbg(9, "removing friend %d", friend);
             tox_friend_delete(tox, friend, NULL);
         }
     }
@@ -606,17 +606,17 @@ void cb___self_connection_status(Tox *tox, TOX_CONNECTION connection_status, voi
     switch (connection_status)
     {
         case TOX_CONNECTION_NONE:
-            dbg(2, "Offline\n");
+            dbg(2, "Offline");
             my_connection_status = TOX_CONNECTION_NONE;
             my_last_offline_timestamp = get_unix_time();
             break;
         case TOX_CONNECTION_TCP:
-            dbg(2, "Online, using TCP\n");
+            dbg(2, "Online, using TCP");
             my_connection_status = TOX_CONNECTION_TCP;
             my_last_online_timestamp = get_unix_time();
             break;
         case TOX_CONNECTION_UDP:
-            dbg(2, "Online, using UDP\n");
+            dbg(2, "Online, using UDP");
             my_connection_status = TOX_CONNECTION_UDP;
             my_last_online_timestamp = get_unix_time();
             break;
@@ -631,11 +631,11 @@ void cb___friend_request(Tox *tox, const uint8_t *public_key, const uint8_t *mes
 
     if (err != TOX_ERR_FRIEND_ADD_OK)
     {
-        printf("Could not add friend, error: %d\n", err);
+        dbg(9, "Could not add friend, error: %d", err);
     }
     else
     {
-        printf("Added to our friend list\n");
+        dbg(9, "Added to our friend list");
     }
 
     update_savedata_file(tox);
@@ -718,7 +718,7 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
         {
             free(global_tv_toxid);
             global_tv_toxid = NULL;
-            dbg(9, "global_tv_toxid(4)=NULL\n");
+            dbg(9, "global_tv_toxid(4)=NULL");
             global_tv_friendnum = -1;
         }
         write_tvpubkey_to_file(NULL);
@@ -770,7 +770,7 @@ void cb___call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool vi
 
     if (err != TOXAV_ERR_ANSWER_OK)
     {
-        printf("Could not answer call, friend: %d, error: %d\n", friend_number, err);
+        dbg(9, "Could not answer call, friend: %d, error: %d", friend_number, err);
     }
 }
 
@@ -778,7 +778,7 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
 {
     if (state & TOXAV_FRIEND_CALL_STATE_FINISHED)
     {
-        printf("Call with friend %d finished\n", friend_number);
+        dbg(9, "Call with friend %d finished", friend_number);
         if (friend_number == global_tv_friendnum)
         {
             global_tv_video_active = 0;
@@ -787,7 +787,7 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
     }
     else if (state & TOXAV_FRIEND_CALL_STATE_ERROR)
     {
-        printf("Call with friend %d errored\n", friend_number);
+        dbg(9, "Call with friend %d errored", friend_number);
         if (friend_number == global_tv_friendnum)
         {
             global_tv_video_active = 0;
@@ -801,8 +801,8 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
                       (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_V);
     // ** deactviated ** // toxav_bit_rate_set(toxAV, friend_number, send_audio ? audio_bitrate : 0, send_video ? video_bitrate : 0, NULL);
 
-    printf("Call state for friend %d changed to %d: audio: %d, video: %d\n", friend_number, state,
-           send_audio, send_video);
+    dbg(9, "Call state for friend %d changed to %d: audio: %d, video: %d", friend_number, state,
+        send_audio, send_video);
 }
 
 void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_t *pcm,
@@ -817,7 +817,7 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
     toxav_audio_send_frame(toxAV, friend_number, pcm, sample_count, channels, sampling_rate, &err);
     if (err != TOXAV_ERR_SEND_FRAME_OK)
     {
-        printf("Could not send audio frame to friend: %d, error: %d\n", friend_number, err);
+        dbg(9, "Could not send audio frame to friend: %d, error: %d", friend_number, err);
     }
     // TODO: send to all connected friends ---------------------------
 
@@ -835,7 +835,7 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
 
     if (ystride < width || ustride < width / 2 || vstride < width / 2)
     {
-        printf("wtf\n");
+        dbg(9, "wtf");
         return;
     }
 
@@ -862,7 +862,7 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
     toxav_video_send_frame(toxAV, friend_number, width, height, y_dest, u_dest, v_dest, &err);
     if (err != TOXAV_ERR_SEND_FRAME_OK)
     {
-        printf("Could not send video frame to friend: %d, error: %d\n", friend_number, err);
+        dbg(9, "Could not send video frame to friend: %d, error: %d", friend_number, err);
     }
     // TODO: send to all connected friends ---------------------------
 
@@ -878,7 +878,7 @@ void
 tox_log_cb__custom(Tox *tox, TOX_LOG_LEVEL level, const char *file, uint32_t line, const char *func,
                    const char *message, void *user_data)
 {
-    dbg(9, "%d:%s:%d:%s:%s\n", (int) level, file, (int) line, func, message);
+    dbg(9, "%d:%s:%d:%s:%s", (int) level, file, (int) line, func, message);
 }
 
 
@@ -907,12 +907,12 @@ Tox *create_tox()
     if (switch_tcponly == 0)
     {
         options.udp_enabled = true; // UDP mode
-        dbg(0, "setting UDP mode\n");
+        dbg(0, "setting UDP mode");
     }
     else
     {
         options.udp_enabled = false; // TCP mode
-        dbg(0, "setting TCP mode\n");
+        dbg(0, "setting TCP mode");
     }
     // ----------------------------------------------
 
@@ -923,13 +923,13 @@ Tox *create_tox()
 
     if (use_tor == 1)
     {
-        dbg(0, "setting Tor Relay mode\n");
+        dbg(0, "setting Tor Relay mode");
         options.udp_enabled = false; // TCP mode
-        dbg(0, "setting TCP mode\n");
+        dbg(0, "setting TCP mode");
         const char *proxy_host = "127.0.0.1";
-        dbg(0, "setting proxy_host %s\n", proxy_host);
+        dbg(0, "setting proxy_host %s", proxy_host);
         uint16_t proxy_port = PROXY_PORT_TOR_DEFAULT;
-        dbg(0, "setting proxy_port %d\n", (int) proxy_port);
+        dbg(0, "setting proxy_port %d", (int) proxy_port);
         options.proxy_type = TOX_PROXY_TYPE_SOCKS5;
         options.proxy_host = proxy_host;
         options.proxy_port = proxy_port;
@@ -957,7 +957,7 @@ Tox *create_tox()
         size_t dummy = fread(savedata, fsize, 1, f);
         if (dummy < 1)
         {
-            dbg(0, "reading savedata failed\n");
+            dbg(0, "reading savedata failed");
         }
         fclose(f);
 
@@ -975,7 +975,7 @@ Tox *create_tox()
     }
 
     bool local_discovery_enabled = tox_options_get_local_discovery_enabled(&options);
-    dbg(9, "local discovery enabled = %d\n", (int) local_discovery_enabled);
+    dbg(9, "local discovery enabled = %d", (int) local_discovery_enabled);
 
     return tox;
 }
@@ -1078,7 +1078,7 @@ void bootstap_nodes(Tox *tox, DHT_node nodes[], int number_of_nodes, int add_as_
         }
         else
         {
-            dbg(2, "Not adding any TCP relays\n");
+            dbg(2, "Not adding any TCP relays");
         }
     }
 }
@@ -1163,24 +1163,24 @@ void bootstrap(Tox *tox)
 
     if (switch_nodelist_2 == 0)
     {
-        dbg(9, "nodeslist:1\n");
+        dbg(9, "nodeslist:1");
         bootstap_nodes(tox, &nodes1, (int) (sizeof(nodes1) / sizeof(DHT_node)), 1);
     }
     else if (switch_nodelist_2 == 2)
     {
-        dbg(9, "nodeslist:3\n");
+        dbg(9, "nodeslist:3");
         bootstap_nodes(tox, &nodes3, (int) (sizeof(nodes3) / sizeof(DHT_node)), 0);
     }
     else // (switch_nodelist_2 == 1)
     {
-        dbg(9, "nodeslist:2\n");
+        dbg(9, "nodeslist:2");
         bootstap_nodes(tox, &nodes2, (int) (sizeof(nodes2) / sizeof(DHT_node)), 1);
     }
 }
 
 void av_local_disconnect(ToxAV *av, uint32_t friendnum)
 {
-    dbg(9, "av_local_disconnect\n");
+    dbg(9, "av_local_disconnect");
     TOXAV_ERR_CALL_CONTROL error = 0;
     toxav_call_control(av, friendnum, TOXAV_CALL_CONTROL_CANCEL, &error);
 }
@@ -1192,7 +1192,7 @@ void cb___friend_connection_status(Tox *tox, uint32_t friendnum, TOX_CONNECTION 
     // if (is_friend_online(tox, friendnum) == 1)
     if (connection_status == TOX_CONNECTION_NONE)
     {
-        dbg(0, "friend %d just got online\n", friendnum);
+        dbg(0, "friend %d just got online", friendnum);
 
         if ((uint32_t) global_tv_friendnum == friendnum)
         {
@@ -1201,7 +1201,7 @@ void cb___friend_connection_status(Tox *tox, uint32_t friendnum, TOX_CONNECTION 
     }
     else
     {
-        dbg(0, "friend %d went *OFFLINE*\n", friendnum);
+        dbg(0, "friend %d went *OFFLINE*", friendnum);
 
         // friend went offline -> hang up on all calls
         if ((uint32_t) global_tv_friendnum == friendnum)
@@ -1215,7 +1215,7 @@ void cb___friend_connection_status(Tox *tox, uint32_t friendnum, TOX_CONNECTION 
         }
     }
 
-    dbg(2, "cb___friend_connection_status:*READY*:friendnum=%d %d\n",
+    dbg(2, "cb___friend_connection_status:*READY*:friendnum=%d %d",
         (int) friendnum,
         (int) connection_status);
 }
@@ -1229,14 +1229,14 @@ void *thread_av(void *data)
 
     if (pthread_mutex_init(&av_thread_lock, NULL) != 0)
     {
-        dbg(0, "Error creating av_thread_lock\n");
+        dbg(0, "Error creating av_thread_lock");
     }
     else
     {
-        dbg(2, "av_thread_lock created successfully\n");
+        dbg(2, "av_thread_lock created successfully");
     }
 
-    dbg(2, "AV Thread #%d: starting\n", (int) id);
+    dbg(2, "AV Thread #%d: starting", (int) id);
 
 
     while (toxav_iterate_thread_stop != 1)
@@ -1256,7 +1256,7 @@ void *thread_av(void *data)
     }
 
 
-    dbg(2, "ToxVideo:Clean thread exit!\n");
+    dbg(2, "ToxVideo:Clean thread exit!");
 }
 
 
@@ -1269,14 +1269,14 @@ void *thread_video_av(void *data)
 
     if (pthread_mutex_init(&av_thread_lock, NULL) != 0)
     {
-        dbg(0, "Error creating video av_thread_lock\n");
+        dbg(0, "Error creating video av_thread_lock");
     }
     else
     {
-        dbg(2, "av_thread_lock video created successfully\n");
+        dbg(2, "av_thread_lock video created successfully");
     }
 
-    dbg(2, "AV video Thread #%d: starting\n", (int) id);
+    dbg(2, "AV video Thread #%d: starting", (int) id);
 
     while (toxav_video_thread_stop != 1)
     {
@@ -1287,7 +1287,7 @@ void *thread_video_av(void *data)
         usleep(toxav_iteration_interval(av) * 1000);
     }
 
-    dbg(2, "ToxVideo:Clean video thread exit!\n");
+    dbg(2, "ToxVideo:Clean video thread exit!");
 }
 
 
@@ -1325,7 +1325,7 @@ void reconnect(Tox *tox)
         usleep(tox_iteration_interval(tox) * 1000);
         if (tox_self_get_connection_status(tox) && off)
         {
-            dbg(2, "Reconnect: Tox online, took %llu seconds\n", time(NULL) - cur_time);
+            dbg(2, "Reconnect: Tox online, took %llu seconds", time(NULL) - cur_time);
             off = 0;
             break;
         }
@@ -1335,7 +1335,7 @@ void reconnect(Tox *tox)
 
         if (overall_loop_counter > (100 * 20)) // 40 secs
         {
-            dbg(2, "Reconnect: Giving up after %llu seconds\n", time(NULL) - cur_time);
+            dbg(2, "Reconnect: Giving up after %llu seconds", time(NULL) - cur_time);
             break;
         }
 
@@ -1343,7 +1343,7 @@ void reconnect(Tox *tox)
         {
             loop_counter = 0;
             // if not yet online, bootstrap every 20 seconds
-            dbg(2, "Reconnect: Tox NOT online yet, bootstrapping again\n");
+            dbg(2, "Reconnect: Tox NOT online yet, bootstrapping again");
             bootstrap(tox);
         }
     }
@@ -1371,7 +1371,7 @@ void print_tox_id(Tox *tox)
 
     if (logfile)
     {
-        dbg(2, "--MyToxID--:%s\n", tox_id_hex);
+        dbg(2, "--MyToxID--:%s", tox_id_hex);
         int fd = fileno(logfile);
         fsync(fd);
     }
@@ -1382,7 +1382,7 @@ void sigint_handler(int signo)
 {
     if (signo == SIGINT)
     {
-        printf("received SIGINT, pid=%d\n", getpid());
+        dbg(9, "received SIGINT, pid=%d", getpid());
         tox_loop_running = 0;
     }
 }
@@ -1441,7 +1441,7 @@ int main(int argc, char *argv[])
         usleep(tox_iteration_interval(tox) * 1000);
         if (tox_self_get_connection_status(tox) && off)
         {
-            dbg(2, "Tox online, took %llu seconds\n", time(NULL) - cur_time);
+            dbg(2, "Tox online, took %llu seconds", time(NULL) - cur_time);
             off = 0;
             break;
         }
@@ -1452,7 +1452,7 @@ int main(int argc, char *argv[])
         {
             loop_counter = 0;
             // if not yet online, bootstrap every 20 seconds
-            dbg(2, "Tox NOT online yet, bootstrapping again\n");
+            dbg(2, "Tox NOT online yet, bootstrapping again");
             bootstrap(tox);
         }
     }
@@ -1466,11 +1466,11 @@ int main(int argc, char *argv[])
 
 
     TOXAV_ERR_NEW rc;
-    dbg(2, "new Tox AV\n");
+    dbg(2, "new Tox AV");
     mytox_av = toxav_new(tox, &rc);
     if (rc != TOXAV_ERR_NEW_OK)
     {
-        dbg(0, "Error at toxav_new: %d\n", rc);
+        dbg(0, "Error at toxav_new: %d", rc);
     }
 
     // init AV callbacks -------------------------------
@@ -1524,6 +1524,13 @@ int main(int argc, char *argv[])
         else
         {
             check_online_status(tox);
+            if (global_tv_video_active == 0)
+            {
+                if (is_friend_online(tox, global_tv_friendnum) == 1)
+                {
+                    start_av_call_to_tv(tox, global_tv_friendnum);
+                }
+            }
         }
     }
 
