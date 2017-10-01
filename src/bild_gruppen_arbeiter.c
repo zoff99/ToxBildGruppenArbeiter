@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
 
