@@ -72,6 +72,7 @@ int use_tor = 0;
 int switch_nodelist_2 = 0;
 FILE *logfile = NULL;
 ToxAV *mytox_av = NULL;
+Tox *mytox_global = NULL;
 int toxav_video_thread_stop = 0;
 int toxav_iterate_thread_stop = 0;
 int tox_loop_running = 1;
@@ -239,21 +240,6 @@ uint8_t *hex_string_to_bin(const char *hex_string)
     }
 
     return val;
-}
-
-void update_savedata_file(const Tox *tox)
-{
-    size_t size = tox_get_savedata_size(tox);
-    char *savedata = malloc(size);
-    tox_get_savedata(tox, (uint8_t *) savedata);
-
-    FILE *f = fopen(savedata_tmp_filename, "wb");
-    fwrite(savedata, size, 1, f);
-    fclose(f);
-
-    rename(savedata_tmp_filename, savedata_filename);
-
-    free(savedata);
 }
 
 //
@@ -440,6 +426,9 @@ void invite_tv_as_friend(Tox *tox, uint8_t *tox_id_tv_bin)
     {
         dbg(9, "TV already a friend");
     }
+
+    update_savedata_file(tox);
+
 }
 
 
@@ -892,7 +881,10 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
                 {
                     if (global_tv_video_active == 1)
                     {
-                        toxav_audio_send_frame(toxAV, global_tv_friendnum, pcm, sample_count,
+                        toxav_audio_send_frame(toxAV,
+                                               global_tv_friendnum,
+                                               pcm,
+                                               sample_count,
                                                channels,
                                                sampling_rate,
                                                &err);
@@ -906,17 +898,34 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
                 }
                 // send to TV ---------------------------
 
-                //                // TODO: send to all connected friends ---------------------------
-                //                toxav_audio_send_frame(toxAV, friend_number, pcm, sample_count, channels,
-                //                                       sampling_rate,
-                //                                       &err);
-                //                if (err != TOXAV_ERR_SEND_FRAME_OK)
-                //                {
-                //                    dbg(9, "Could not send audio frame to friend: %d, error: %d", friend_number,
-                //                        err);
-                //                }
-                //                // TODO: send to all connected friends ---------------------------
 
+                // TODO: send to all connected friends ---------------------------
+                size_t i = 0;
+                size_t size = tox_self_get_friend_list_size(mytox_global);
+
+                if (size > 0)
+                {
+                    uint32_t list[size];
+                    tox_self_get_friend_list(mytox_global, list);
+
+                    for (i = 0; i < size; ++i)
+                    {
+                        toxav_audio_send_frame(toxAV,
+                                               list[i],
+                                               pcm,
+                                               sample_count,
+                                               channels,
+                                               sampling_rate,
+                                               &err);
+                        if (err != TOXAV_ERR_SEND_FRAME_OK)
+                        {
+                            dbg(9, "Could not send audio frame to friend: %d, error: %d",
+                                friend_number,
+                                err);
+                        }
+                    }
+                }
+                // TODO: send to all connected friends ---------------------------
             }
         }
     }
@@ -973,8 +982,14 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                         // dbg(9, "cb___video_receive_frame:global_tv_video_active=%d",
                         //    (int) global_tv_video_active);
 
-                        toxav_video_send_frame(toxAV, global_tv_friendnum, width, height, y_dest,
-                                               u_dest, v_dest, &err);
+                        toxav_video_send_frame(toxAV,
+                                               global_tv_friendnum,
+                                               width,
+                                               height,
+                                               y_dest,
+                                               u_dest,
+                                               v_dest,
+                                               &err);
                         if (err != TOXAV_ERR_SEND_FRAME_OK)
                         {
                             dbg(9, "Could not send video frame to TV: %d, error: %d", friend_number,
@@ -984,16 +999,34 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                 }
                 // send to TV ---------------------------
 
-                //                // TODO: send to all connected friends ---------------------------
-                //                toxav_video_send_frame(toxAV, friend_number, width, height, y_dest, u_dest, v_dest,
-                //                                       &err);
-                //                if (err != TOXAV_ERR_SEND_FRAME_OK)
-                //                {
-                //                    dbg(9, "Could not send video frame to friend: %d, error: %d", friend_number,
-                //                        err);
-                //                }
-                //                // TODO: send to all connected friends ---------------------------
+                // TODO: send to all connected friends ---------------------------
+                size_t i = 0;
+                size_t size = tox_self_get_friend_list_size(mytox_global);
 
+                if (size > 0)
+                {
+                    uint32_t list[size];
+                    tox_self_get_friend_list(mytox_global, list);
+
+                    for (i = 0; i < size; ++i)
+                    {
+                        toxav_video_send_frame(toxAV,
+                                               list[i],
+                                               width,
+                                               height,
+                                               y_dest,
+                                               u_dest,
+                                               v_dest,
+                                               &err);
+                        if (err != TOXAV_ERR_SEND_FRAME_OK)
+                        {
+                            dbg(9, "Could not send video frame to friend: %d, error: %d",
+                                friend_number,
+                                err);
+                        }
+                    }
+                }
+                // TODO: send to all connected friends ---------------------------
             }
         }
     }
@@ -1109,6 +1142,22 @@ Tox *create_tox()
 
     return tox;
 }
+
+void update_savedata_file(const Tox *tox)
+{
+    size_t size = tox_get_savedata_size(tox);
+    char *savedata = malloc(size);
+    tox_get_savedata(tox, (uint8_t *) savedata);
+
+    FILE *f = fopen(savedata_tmp_filename, "wb");
+    fwrite(savedata, size, 1, f);
+    fclose(f);
+
+    rename(savedata_tmp_filename, savedata_filename);
+
+    free(savedata);
+}
+
 
 void shuffle(int *array, size_t n)
 {
@@ -1315,7 +1364,7 @@ void av_local_disconnect(ToxAV *av, uint32_t friendnum)
     toxav_call_control(av, friendnum, TOXAV_CALL_CONTROL_CANCEL, &error);
 }
 
-void disconncet_all_calls(Tox *tox)
+void disconnect_all_calls(Tox *tox)
 {
     size_t i = 0;
     size_t size = tox_self_get_friend_list_size(tox);
@@ -1570,6 +1619,7 @@ int main(int argc, char *argv[])
     //}
 
     Tox *tox = create_tox();
+    mytox_global = tox;
     global_start_time = time(NULL);
 
     tox_self_set_name(tox, (uint8_t *) bot_name, strlen(bot_name), NULL);
@@ -1698,7 +1748,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    disconncet_all_calls(tox);
+    update_savedata_file(tox);
+    disconnect_all_calls(tox);
 
     toxav_kill(mytox_av);
     tox_kill(tox);
