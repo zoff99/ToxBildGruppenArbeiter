@@ -398,6 +398,12 @@ void start_av_call_to_tv(Tox *tox, uint32_t friendnum)
 
 void invite_tv_as_friend(Tox *tox, uint8_t *tox_id_tv_bin)
 {
+    if (global_tv_toxid == NULL)
+    {
+        dbg(9, "no TV ToxID set");
+        return;
+    }
+
     int64_t fnum_tv = friend_number_for_tv(tox, tox_id_tv_bin);
     if (fnum_tv == -1)
     {
@@ -716,6 +722,12 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
     {
         if (global_tv_toxid)
         {
+            if (global_tv_video_active == 1)
+            {
+                av_local_disconnect(mytox_av, global_tv_friendnum);
+                global_tv_video_active = 0;
+            }
+
             free(global_tv_toxid);
             global_tv_toxid = NULL;
             dbg(9, "global_tv_toxid(4)=NULL");
@@ -793,6 +805,16 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
             global_tv_video_active = 0;
         }
         return;
+    }
+
+
+    if (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_V)
+    {
+        dbg(9, "friend accepted Video call", friend_number);
+        if (friend_number == global_tv_friendnum)
+        {
+            global_tv_video_active = 1;
+        }
     }
 
     bool send_audio = (state & TOXAV_FRIEND_CALL_STATE_SENDING_A) &&
@@ -1460,8 +1482,11 @@ int main(int argc, char *argv[])
 
     if (global_tv_friendnum == -1)
     {
-        invite_tv_as_friend(tox, global_tv_toxid);
-        global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
+        if (global_tv_toxid != NULL)
+        {
+            invite_tv_as_friend(tox, global_tv_toxid);
+            global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
+        }
     }
 
 
