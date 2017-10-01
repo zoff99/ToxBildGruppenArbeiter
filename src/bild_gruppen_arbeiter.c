@@ -9,18 +9,12 @@
  */
 
 #include <pthread.h>
-#include <time.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <signal.h>
 #include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
 #include <stdbool.h>
 
 #include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/ioctl.h>
 
 // --- tweak in A.S. ---
 // --- tweak in A.S. ---
@@ -28,9 +22,6 @@
 #include "tox/toxav.h"
 #include "sodium.h"
 
-#include <tox/tox.h>
-#include <tox/toxav.h>
-#include <sodium.h>
 // --- tweak in A.S. ---
 // --- tweak in A.S. ---
 
@@ -78,7 +69,7 @@ int tox_loop_running = 1;
 int global_want_restart = 0;
 TOX_CONNECTION my_connection_status = TOX_CONNECTION_NONE;
 int global_video_active = 0;
-uint32_t friend_to_take_av_from = -1;
+int64_t friend_to_take_av_from = -1;
 uint8_t *global_tv_toxid = NULL;
 int64_t global_tv_friendnum = -1;
 int global_tv_video_active = 0;
@@ -735,6 +726,11 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
         }
         write_tvpubkey_to_file(NULL);
     }
+    else if (!strncmp("t", dest_msg, (size_t) strlen("t")))
+    {
+        friend_to_take_av_from = friend_number;
+        dbg(9, "friend_to_take_av_from = %d [2]", (int) friend_to_take_av_from);
+    }
         //else if (!strcmp("!callme", dest_msg))
         //{
         //	toxav_call(mytox_av, friend_number, audio_bitrate, 0, NULL);
@@ -750,6 +746,7 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
 .info                  Show stats\n\
 .settv <ToxID>         Set <ToxID> as TV\n\
 .deltv                 Delete TV\n\
+t                      make me the current speaker\n\
 .locksp                Lock current Speaker\n\
 .unlocksp              Unlock Speaker";
         tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) help_msg,
@@ -815,6 +812,21 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
         {
             global_tv_video_active = 1;
         }
+        else
+        {
+            if (friend_to_take_av_from == -1)
+            {
+                friend_to_take_av_from = friend_number;
+                global_video_active = 1;
+                dbg(9, "friend_to_take_av_from = %d [3]", (int) friend_to_take_av_from);
+                dbg(9, "global_video_active = 1 [3]");
+            }
+            else if (friend_to_take_av_from == friend_number)
+            {
+                global_video_active = 1;
+                dbg(9, "global_video_active = 1 [6]");
+            }
+        }
     }
 
     bool send_audio = (state & TOXAV_FRIEND_CALL_STATE_SENDING_A) &&
@@ -831,20 +843,48 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
                               size_t sample_count, uint8_t channels, uint32_t sampling_rate,
                               void *user_data)
 {
-    TOXAV_ERR_SEND_FRAME err;
-
-
-
-    // TODO: send to all connected friends ---------------------------
-    toxav_audio_send_frame(toxAV, friend_number, pcm, sample_count, channels, sampling_rate, &err);
-    if (err != TOXAV_ERR_SEND_FRAME_OK)
+    if (global_video_active == 1)
     {
-        dbg(9, "Could not send audio frame to friend: %d, error: %d", friend_number, err);
+        if (friend_to_take_av_from != -1)
+        {
+            if (friend_to_take_av_from = friend_number)
+            {
+
+                TOXAV_ERR_SEND_FRAME err;
+
+                // send to TV ---------------------------
+                if (global_tv_friendnum = !-1)
+                {
+                    if (global_tv_video_active == 1)
+                    {
+                        toxav_audio_send_frame(toxAV, global_tv_friendnum, pcm, sample_count,
+                                               channels,
+                                               sampling_rate,
+                                               &err);
+                        if (err != TOXAV_ERR_SEND_FRAME_OK)
+                        {
+                            dbg(9, "Could not send audio frame to TV: %d, error: %d",
+                                friend_number,
+                                err);
+                        }
+                    }
+                }
+                // send to TV ---------------------------
+
+                //                // TODO: send to all connected friends ---------------------------
+                //                toxav_audio_send_frame(toxAV, friend_number, pcm, sample_count, channels,
+                //                                       sampling_rate,
+                //                                       &err);
+                //                if (err != TOXAV_ERR_SEND_FRAME_OK)
+                //                {
+                //                    dbg(9, "Could not send audio frame to friend: %d, error: %d", friend_number,
+                //                        err);
+                //                }
+                //                // TODO: send to all connected friends ---------------------------
+
+            }
+        }
     }
-    // TODO: send to all connected friends ---------------------------
-
-
-
 }
 
 void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t width, uint16_t height,
@@ -876,19 +916,44 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
         memcpy(&v_dest[h * width / 2], &v[h * vstride], width / 2);
     }
 
-    TOXAV_ERR_SEND_FRAME err;
-
-
-
-    // TODO: send to all connected friends ---------------------------
-    toxav_video_send_frame(toxAV, friend_number, width, height, y_dest, u_dest, v_dest, &err);
-    if (err != TOXAV_ERR_SEND_FRAME_OK)
+    if (global_video_active == 1)
     {
-        dbg(9, "Could not send video frame to friend: %d, error: %d", friend_number, err);
+        if (friend_to_take_av_from != -1)
+        {
+            if (friend_to_take_av_from = friend_number)
+            {
+
+                TOXAV_ERR_SEND_FRAME err;
+
+                // send to TV ---------------------------
+                if (global_tv_friendnum = !-1)
+                {
+                    if (global_tv_video_active == 1)
+                    {
+                        toxav_video_send_frame(toxAV, global_tv_friendnum, width, height, y_dest,
+                                               u_dest, v_dest, &err);
+                        if (err != TOXAV_ERR_SEND_FRAME_OK)
+                        {
+                            dbg(9, "Could not send video frame to TV: %d, error: %d", friend_number,
+                                err);
+                        }
+                    }
+                }
+                // send to TV ---------------------------
+
+                //                // TODO: send to all connected friends ---------------------------
+                //                toxav_video_send_frame(toxAV, friend_number, width, height, y_dest, u_dest, v_dest,
+                //                                       &err);
+                //                if (err != TOXAV_ERR_SEND_FRAME_OK)
+                //                {
+                //                    dbg(9, "Could not send video frame to friend: %d, error: %d", friend_number,
+                //                        err);
+                //                }
+                //                // TODO: send to all connected friends ---------------------------
+
+            }
+        }
     }
-    // TODO: send to all connected friends ---------------------------
-
-
 
     free(y_dest);
     free(u_dest);
@@ -1212,13 +1277,16 @@ void cb___friend_connection_status(Tox *tox, uint32_t friendnum, TOX_CONNECTION 
                                    void *user_data)
 {
     // if (is_friend_online(tox, friendnum) == 1)
-    if (connection_status == TOX_CONNECTION_NONE)
+    if (connection_status != TOX_CONNECTION_NONE)
     {
         dbg(0, "friend %d just got online", friendnum);
 
-        if ((uint32_t) global_tv_friendnum == friendnum)
+        if (global_tv_friendnum == friendnum)
         {
             start_av_call_to_tv(tox, global_tv_friendnum);
+        }
+        else
+        {
         }
     }
     else
@@ -1226,13 +1294,20 @@ void cb___friend_connection_status(Tox *tox, uint32_t friendnum, TOX_CONNECTION 
         dbg(0, "friend %d went *OFFLINE*", friendnum);
 
         // friend went offline -> hang up on all calls
-        if ((uint32_t) global_tv_friendnum == friendnum)
+        if (global_tv_friendnum == friendnum)
         {
             av_local_disconnect(mytox_av, friendnum);
             global_tv_video_active = 0;
         }
         else
         {
+            if (friend_to_take_av_from == friendnum)
+            {
+                friend_to_take_av_from = -1;
+                global_video_active = 0;
+                dbg(9, "friend_to_take_av_from = -1 [1]");
+                dbg(9, "global_video_active = 0 [1]");
+            }
             av_local_disconnect(mytox_av, friendnum);
         }
     }
