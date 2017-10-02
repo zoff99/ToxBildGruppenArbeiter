@@ -40,8 +40,8 @@
 // ----------- version -----------
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 99
-#define VERSION_PATCH 2
-static const char global_version_string[] = "0.99.2";
+#define VERSION_PATCH 3
+static const char global_version_string[] = "0.99.3";
 // ----------- version -----------
 // ----------- version -----------
 
@@ -666,9 +666,15 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
         tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) friend_msg,
                                 strlen(friend_msg), NULL);
 
-        const char *friend_info_msg = "Friends are removed after 1 month of inactivity";
-        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL,
-                                (uint8_t *) friend_info_msg, strlen(friend_info_msg), NULL);
+        // const char *friend_info_msg = "Friends are removed after 1 month of inactivity";
+        //tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL,
+        //                        (uint8_t *) friend_info_msg, strlen(friend_info_msg), NULL);
+	    
+        char tox_id_hex[TOX_ADDRESS_SIZE * 2 + 1];
+        get_my_toxid(tox, tox_id_hex);
+
+        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) tox_id_hex,
+                                strlen(tox_id_hex), NULL);
     }
     else if (!strncmp(".settv ", dest_msg, (size_t) 6))
     {
@@ -890,9 +896,9 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
                                                &err);
                         if (err != TOXAV_ERR_SEND_FRAME_OK)
                         {
-                            dbg(9, "Could not send audio frame to TV: %d, error: %d",
-                                friend_number,
-                                err);
+                            // dbg(9, "Could not send audio frame to TV: %d, error: %d",
+                            //    friend_number,
+                            //    err);
                         }
                     }
                 }
@@ -919,9 +925,9 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
                                                &err);
                         if (err != TOXAV_ERR_SEND_FRAME_OK)
                         {
-                            dbg(9, "Could not send audio frame to friend: %d, error: %d",
-                                friend_number,
-                                err);
+                            // dbg(9, "Could not send audio frame to friend: %d, error: %d",
+                            //    friend_number,
+                            //    err);
                         }
                     }
                 }
@@ -992,8 +998,8 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                                                &err);
                         if (err != TOXAV_ERR_SEND_FRAME_OK)
                         {
-                            dbg(9, "Could not send video frame to TV: %d, error: %d", friend_number,
-                                err);
+                            // dbg(9, "Could not send video frame to TV: %d, error: %d", friend_number,
+                            //    err);
                         }
                     }
                 }
@@ -1020,9 +1026,9 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                                                &err);
                         if (err != TOXAV_ERR_SEND_FRAME_OK)
                         {
-                            dbg(9, "Could not send video frame to friend: %d, error: %d",
-                                friend_number,
-                                err);
+                            // dbg(9, "Could not send video frame to friend: %d, error: %d",
+                            //    friend_number,
+                            //    err);
                         }
                     }
                 }
