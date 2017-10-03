@@ -35,13 +35,12 @@
 // --- tweak in A.S. ---
 
 
-
 // ----------- version -----------
 // ----------- version -----------
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 99
-#define VERSION_PATCH 4
-static const char global_version_string[] = "0.99.4";
+#define VERSION_PATCH 5
+static const char global_version_string[] = "0.99.5";
 // ----------- version -----------
 // ----------- version -----------
 
@@ -62,7 +61,6 @@ static const int32_t video_bitrate = 2500; // kbits/s
 static const char *savedata_filename = "savedata.tox";
 const char *savedata_tmp_filename = "savedata.tox.tmp";
 const char *log_filename = "bild_gruppen_arbeiter.log";
-const char *tv_pubkey_filename = "tv_pubkey.txt";
 static const char *bot_name = "BildGruppenArbeiter";
 static const char *bot_status_msg = "VideoConfBot. Send '!info' for stats.";
 time_t my_last_offline_timestamp = -1;
@@ -80,9 +78,16 @@ int global_want_restart = 0;
 TOX_CONNECTION my_connection_status = TOX_CONNECTION_NONE;
 int global_video_active = 0;
 int64_t friend_to_take_av_from = -1;
+
+const char *tv_pubkey_filename = "tv_pubkey.txt";
 uint8_t *global_tv_toxid = NULL;
 int64_t global_tv_friendnum = -1;
 int global_tv_video_active = 0;
+
+const char *cam_pubkey_filename = "cam_pubkey.txt";
+uint8_t *global_cam_toxid = NULL;
+int64_t global_cam_friendnum = -1;
+int global_cam_video_active = 0;
 
 
 typedef struct DHT_node
@@ -280,6 +285,46 @@ void send_text_message_to_friend(Tox *tox, uint32_t friend_number, const char *f
                             NULL);
 }
 
+int64_t friend_number_for_cam(Tox *tox, uint8_t *tox_id_cam_bin)
+{
+    size_t i = 0;
+    size_t size = tox_self_get_friend_list_size(tox);
+    int64_t ret_friendnum = -1;
+
+    if (size == 0)
+    {
+        return ret_friendnum;
+    }
+
+    if (tox_id_cam_bin == NULL)
+    {
+        return ret_friendnum;
+    }
+
+    uint32_t list[size];
+    tox_self_get_friend_list(tox, list);
+    char friend_key[TOX_PUBLIC_KEY_SIZE];
+    CLEAR(friend_key);
+
+    for (i = 0; i < size; ++i)
+    {
+        if (tox_friend_get_public_key(tox, list[i], (uint8_t *) friend_key, NULL) == 0)
+        {
+        }
+        else
+        {
+            if (memcmp(tox_id_cam_bin, friend_key, TOX_PUBLIC_KEY_SIZE) == 0)
+            {
+                ret_friendnum = list[i];
+                return ret_friendnum;
+            }
+        }
+    }
+
+    return ret_friendnum;
+}
+
+
 int64_t friend_number_for_tv(Tox *tox, uint8_t *tox_id_tv_bin)
 {
     size_t i = 0;
@@ -341,6 +386,64 @@ int is_friend_online(Tox *tox, uint32_t friendnum)
     }
 }
 
+void start_av_call_to_cam(Tox *tox, uint32_t friendnum)
+{
+    if (is_friend_online(tox, friendnum) == 1)
+    {
+        send_text_message_to_friend(tox, friendnum, "i am trying to send my video ...");
+
+        if (mytox_av != NULL)
+        {
+            TOXAV_ERR_CALL error = 0;
+            toxav_call(mytox_av, friendnum, audio_bitrate, video_bitrate, &error);
+
+            if (error != TOXAV_ERR_CALL_OK)
+            {
+                switch (error)
+                {
+                    case TOXAV_ERR_CALL_MALLOC:
+                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_MALLOC");
+                        break;
+
+                    case TOXAV_ERR_CALL_SYNC:
+                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_SYNC");
+                        break;
+
+                    case TOXAV_ERR_CALL_FRIEND_NOT_FOUND:
+                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_NOT_FOUND");
+                        break;
+
+                    case TOXAV_ERR_CALL_FRIEND_NOT_CONNECTED:
+                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_NOT_CONNECTED");
+                        break;
+
+                    case TOXAV_ERR_CALL_FRIEND_ALREADY_IN_CALL:
+                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_ALREADY_IN_CALL");
+                        break;
+
+                    case TOXAV_ERR_CALL_INVALID_BIT_RATE:
+                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_INVALID_BIT_RATE");
+                        break;
+
+                    default:
+                        dbg(0, "toxav_call (1):*unknown error*");
+                        break;
+                }
+            }
+            else
+            {
+                global_cam_video_active = 1;
+                send_text_message_to_friend(tox, friendnum, "starting call to Cam");
+            }
+        }
+        else
+        {
+            send_text_message_to_friend(tox, friendnum, "sending video failed:toxav==NULL");
+        }
+    }
+}
+
+
 void start_av_call_to_tv(Tox *tox, uint32_t friendnum)
 {
     if (is_friend_online(tox, friendnum) == 1)
@@ -397,6 +500,51 @@ void start_av_call_to_tv(Tox *tox, uint32_t friendnum)
         }
     }
 }
+
+void invite_cam_as_friend(Tox *tox, uint8_t *tox_id_cam_bin)
+{
+    if (tox_id_cam_bin == NULL)
+    {
+        dbg(9, "no Cam ToxID set");
+        return;
+    }
+
+    int64_t fnum_cam = friend_number_for_tv(tox, tox_id_cam_bin);
+    if (fnum_cam == -1)
+    {
+        dbg(9, "Cam not on friendlist, inviting ...");
+        const char *message_str = "invite ...";
+        TOX_ERR_FRIEND_ADD error;
+        uint32_t friendnum = tox_friend_add(tox, (uint8_t *) tox_id_cam_bin,
+                                            (uint8_t *) message_str,
+                                            (size_t) strlen(message_str),
+                                            &error);
+
+        if (error != 0)
+        {
+            if (error == TOX_ERR_FRIEND_ADD_ALREADY_SENT)
+            {
+                dbg(9, "add friend:ERROR:TOX_ERR_FRIEND_ADD_ALREADY_SENT");
+            }
+            else
+            {
+                dbg(9, "add friend:ERROR:%d", (int) error);
+            }
+        }
+        else
+        {
+            dbg(9, "friend request sent.");
+        }
+    }
+    else
+    {
+        dbg(9, "Cam already a friend");
+    }
+
+    update_savedata_file(tox);
+
+}
+
 
 void invite_tv_as_friend(Tox *tox, uint8_t *tox_id_tv_bin)
 {
@@ -468,9 +616,31 @@ off_t file_size(const char *path)
     return st.st_size;
 }
 
+void delete_cam_file()
+{
+    unlink(cam_pubkey_filename);
+}
+
 void delete_tv_file()
 {
     unlink(tv_pubkey_filename);
+}
+
+void create_cam_file_if_not_exists()
+{
+    if (!file_exists(cam_pubkey_filename))
+    {
+        FILE *fp = fopen(cam_pubkey_filename, "w");
+
+        if (fp == NULL)
+        {
+            dbg(1, "Warning: failed to create cam_pubkey_filename file");
+            return;
+        }
+
+        fclose(fp);
+        dbg(1, "Warning: creating new cam_pubkey_filename file. Did you lose the old one?");
+    }
 }
 
 void create_tv_file_if_not_exists()
@@ -489,6 +659,36 @@ void create_tv_file_if_not_exists()
         dbg(1, "Warning: creating new tv_pubkey_filename file. Did you lose the old one?");
     }
 }
+
+void read_campubkey_from_file(uint8_t *cam_pubkey)
+{
+    create_cam_file_if_not_exists();
+    cam_pubkey = NULL;
+
+    FILE *fp = fopen(cam_pubkey_filename, "r");
+    if (fp == NULL)
+    {
+        dbg(1, "Warning: failed to read tv_pubkey_filename file");
+        return;
+    }
+
+    char id[256];
+    int len;
+    while (fgets(id, sizeof(id), fp))
+    {
+        len = strlen(id);
+        if (--len < TOX_PUBLIC_KEY_SIZE)
+        {
+            continue;
+        }
+
+        cam_pubkey = hex_string_to_bin(id);
+        break;
+    }
+
+    fclose(fp);
+}
+
 
 void read_tvpubkey_from_file(uint8_t *tv_pubkey)
 {
@@ -518,6 +718,33 @@ void read_tvpubkey_from_file(uint8_t *tv_pubkey)
 
     fclose(fp);
 }
+
+void write_campubkey_to_file(uint8_t *cam_pubkey)
+{
+    if (cam_pubkey == NULL)
+    {
+        delete_cam_file();
+    }
+    else
+    {
+        create_cam_file_if_not_exists();
+
+        FILE *fp = fopen(cam_pubkey_filename, "wb");
+        if (fp == NULL)
+        {
+            dbg(1, "Warning: failed to read cam_pubkey_filename file");
+            return;
+        }
+
+        char cam_pubkey_string[TOX_ADDRESS_SIZE * 2 + 1];
+        CLEAR(cam_pubkey_string);
+        bin_to_hex_string(cam_pubkey, (size_t) TOX_ADDRESS_SIZE, cam_pubkey_string);
+
+        int result = fputs(cam_pubkey_string, fp);
+        fclose(fp);
+    }
+}
+
 
 void write_tvpubkey_to_file(uint8_t *tv_pubkey)
 {
@@ -708,15 +935,48 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
     {
         cmd_stats(tox, friend_number);
     }
+    else if (!strncmp(".setcam ", dest_msg, (size_t) 7))
+    {
+        if (strlen(dest_msg) == ((TOX_ADDRESS_SIZE * 2) + 8))
+        {
+            char *cam_hex_pubkey_string = (dest_msg + 8);
+            uint8_t *cam_pubkey = hex_string_to_bin(cam_hex_pubkey_string);
+            if (cam_pubkey)
+            {
+
+                if (global_cam_video_active == 1)
+                {
+                    av_local_disconnect(mytox_av, global_cam_friendnum);
+                    global_cam_video_active = 0;
+                }
+
+                if (global_cam_toxid)
+                {
+                    free(global_cam_toxid);
+                    global_cam_toxid = NULL;
+                }
+                write_campubkey_to_file(cam_pubkey);
+                global_cam_toxid = cam_pubkey;
+
+                // TODO: remove old Cam as friend (but only if Cam ToxID has really changed)
+                global_cam_friendnum = friend_number_for_cam(tox, global_cam_toxid);
+                if (global_cam_friendnum == -1)
+                {
+                    invite_cam_as_friend(tox, global_cam_toxid);
+                    global_cam_friendnum = friend_number_for_cam(tox, global_cam_toxid);
+                }
+                else
+                {
+                    start_av_call_to_cam(tox, global_cam_friendnum);
+                }
+            }
+        }
+    }
     else if (!strncmp(".settv ", dest_msg, (size_t) 6))
     {
-        // dbg(9, "strlen(dest_msg)=%d dest_msg=%s\n", (int)strlen(dest_msg), dest_msg);
-        // dbg(9, "(TOX_ADDRESS_SIZE * 2) + 7=%d\n", (int)((TOX_ADDRESS_SIZE * 2) + 7));
         if (strlen(dest_msg) == ((TOX_ADDRESS_SIZE * 2) + 7))
         {
             char *tv_hex_pubkey_string = (dest_msg + 7);
-            // dbg(9, "strlen(tv_hex_pubkey_string)=%d TOX_ADDRESS_SIZE * 2 +0=%d\n", (int)strlen(tv_hex_pubkey_string), (int)((TOX_ADDRESS_SIZE * 2)+0));
-            // dbg(9, "tv_hex_pubkey_string(2)=%s\n", tv_hex_pubkey_string);
             uint8_t *tv_pubkey = hex_string_to_bin(tv_hex_pubkey_string);
             if (tv_pubkey)
             {
@@ -734,7 +994,6 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
                 }
                 write_tvpubkey_to_file(tv_pubkey);
                 global_tv_toxid = tv_pubkey;
-                // dbg(9, "global_tv_toxid(3)=%s\n", global_tv_toxid);
 
                 // TODO: remove old TV as friend (but only if TV ToxID has really changed)
                 global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
@@ -749,6 +1008,29 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
                 }
             }
         }
+    }
+    else if (strncmp((char *) dest_msg, ".delcam", strlen((char *) ".delcam")) == 0)
+    {
+        if (global_cam_toxid)
+        {
+
+            if (friend_to_take_av_from == global_cam_friendnum)
+            {
+                friend_to_take_av_from = -1;
+            }
+
+            if (global_cam_video_active == 1)
+            {
+                av_local_disconnect(mytox_av, global_cam_friendnum);
+                global_cam_video_active = 0;
+            }
+
+            free(global_cam_toxid);
+            global_cam_toxid = NULL;
+            dbg(9, "global_cam_toxid(4)=NULL");
+            global_cam_friendnum = -1;
+        }
+        write_campubkey_to_file(NULL);
     }
     else if (strncmp((char *) dest_msg, ".deltv", strlen((char *) ".deltv")) == 0)
     {
@@ -771,6 +1053,12 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
     {
         friend_to_take_av_from = friend_number;
         dbg(9, "friend_to_take_av_from = %d [2]", (int) friend_to_take_av_from);
+    }
+    else if (strncmp((char *) dest_msg, "c", strlen((char *) "c")) == 0)
+    {
+        friend_to_take_av_from = global_cam_friendnum;
+        global_video_active = 1;
+        dbg(9, "friend_to_take_av_from (CAM) = %d [2]", (int) friend_to_take_av_from);
     }
     else
     {
@@ -833,6 +1121,10 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
         {
             global_tv_video_active = 0;
         }
+        else if (friend_number == global_cam_friendnum)
+        {
+            global_cam_video_active = 0;
+        }
         return;
     }
     else if (state & TOXAV_FRIEND_CALL_STATE_ERROR)
@@ -842,6 +1134,10 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
         {
             global_tv_video_active = 0;
         }
+        else if (friend_number == global_cam_friendnum)
+        {
+            global_cam_video_active = 0;
+        }
         return;
     }
 
@@ -850,6 +1146,13 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
     {
         dbg(9, "friend %d accepted Video call", (int) friend_number);
         dbg(9, "global_tv_friendnum=%d", (int) global_tv_friendnum);
+
+        if (friend_number == global_cam_friendnum)
+        {
+            global_cam_video_active = 1;
+            dbg(9, "global_cam_video_active=1");
+        }
+
         if (friend_number == global_tv_friendnum)
         {
             global_tv_video_active = 1;
@@ -1427,6 +1730,13 @@ void cb___friend_connection_status(Tox *tox, uint32_t friendnum, TOX_CONNECTION 
         dbg(0, "friend %d went *OFFLINE*", friendnum);
 
         // friend went offline -> hang up on all calls
+
+        if (global_cam_friendnum == friendnum)
+        {
+            av_local_disconnect(mytox_av, friendnum);
+            global_cam_video_active = 0;
+        }
+
         if (global_tv_friendnum == friendnum)
         {
             av_local_disconnect(mytox_av, friendnum);
@@ -1629,15 +1939,16 @@ int main(int argc, char *argv[])
 
     global_video_active = 0;
     friend_to_take_av_from = -1;
+
     global_tv_toxid = NULL;
     global_tv_friendnum = -1;
     global_tv_video_active = 0;
-
     read_tvpubkey_from_file(global_tv_toxid);
-    //if (global_tv_toxid)
-    //{
-    //	dbg(9, "global_tv_toxid(1)=%s\n", global_tv_toxid);
-    //}
+
+    global_cam_toxid = NULL;
+    global_cam_friendnum = -1;
+    global_cam_video_active = 0;
+    read_campubkey_from_file(global_cam_toxid);
 
     Tox *tox = create_tox();
     mytox_global = tox;
@@ -1695,6 +2006,16 @@ int main(int argc, char *argv[])
         {
             invite_tv_as_friend(tox, global_tv_toxid);
             global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
+            update_savedata_file(tox);
+        }
+    }
+
+    if (global_cam_friendnum == -1)
+    {
+        if (global_cam_toxid != NULL)
+        {
+            invite_cam_as_friend(tox, global_cam_toxid);
+            global_cam_friendnum = friend_number_for_cam(tox, global_cam_toxid);
             update_savedata_file(tox);
         }
     }
@@ -1766,6 +2087,15 @@ int main(int argc, char *argv[])
                     start_av_call_to_tv(tox, global_tv_friendnum);
                 }
             }
+
+            if (global_cam_video_active == 0)
+            {
+                if (is_friend_online(tox, global_cam_friendnum) == 1)
+                {
+                    start_av_call_to_cam(tox, global_cam_friendnum);
+                }
+            }
+
         }
     }
 
