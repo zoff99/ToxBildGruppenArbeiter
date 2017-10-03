@@ -39,8 +39,8 @@
 // ----------- version -----------
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 99
-#define VERSION_PATCH 5
-static const char global_version_string[] = "0.99.5";
+#define VERSION_PATCH 6
+static const char global_version_string[] = "0.99.6";
 // ----------- version -----------
 // ----------- version -----------
 
@@ -1234,18 +1234,21 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
 
                     for (i = 0; i < size; ++i)
                     {
-                        toxav_audio_send_frame(toxAV,
-                                               list[i],
-                                               pcm,
-                                               sample_count,
-                                               channels,
-                                               sampling_rate,
-                                               &err);
-                        if (err != TOXAV_ERR_SEND_FRAME_OK)
+                        if (list[i] != global_cam_friendnum)
                         {
-                            // dbg(9, "Could not send audio frame to friend: %d, error: %d",
-                            //    friend_number,
-                            //    err);
+                            toxav_audio_send_frame(toxAV,
+                                                   list[i],
+                                                   pcm,
+                                                   sample_count,
+                                                   channels,
+                                                   sampling_rate,
+                                                   &err);
+                            if (err != TOXAV_ERR_SEND_FRAME_OK)
+                            {
+                                // dbg(9, "Could not send audio frame to friend: %d, error: %d",
+                                //    friend_number,
+                                //    err);
+                            }
                         }
                     }
                 }
@@ -1334,19 +1337,22 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
 
                     for (i = 0; i < size; ++i)
                     {
-                        toxav_video_send_frame(toxAV,
-                                               list[i],
-                                               width,
-                                               height,
-                                               y_dest,
-                                               u_dest,
-                                               v_dest,
-                                               &err);
-                        if (err != TOXAV_ERR_SEND_FRAME_OK)
+                        if (list[i] != global_cam_friendnum)
                         {
-                            // dbg(9, "Could not send video frame to friend: %d, error: %d",
-                            //    friend_number,
-                            //    err);
+                            toxav_video_send_frame(toxAV,
+                                                   list[i],
+                                                   width,
+                                                   height,
+                                                   y_dest,
+                                                   u_dest,
+                                                   v_dest,
+                                                   &err);
+                            if (err != TOXAV_ERR_SEND_FRAME_OK)
+                            {
+                                // dbg(9, "Could not send video frame to friend: %d, error: %d",
+                                //    friend_number,
+                                //    err);
+                            }
                         }
                     }
                 }
