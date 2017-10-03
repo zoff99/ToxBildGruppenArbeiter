@@ -193,10 +193,10 @@ dependencies:
     # --- toxbootstrapd for RASPI ----
 
     - cd src ; rm -fv "$BINARIUM_BIN" "$BINARIUM_BIN"_static
-    - cd src ; . ~/pp ; $CC -O2 -fPIC -o "$BINARIUM_BIN" "$BINARIUM_SRC" -std=gnu99 -I"$_SYSROOT_"/usr/local/include/ -L"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf/ -lsodium -ltoxcore -ltoxav -lpthread -lvpx -ljpeg -lv4lconvert # -lasound
+    - cd src ; . ~/pp ; $CC -O2 -g -fPIC -o "$BINARIUM_BIN" "$BINARIUM_SRC" -std=gnu99 -I"$_SYSROOT_"/usr/local/include/ -L"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf/ -lsodium -ltoxcore -ltoxav -lpthread -lvpx -ljpeg -lv4lconvert # -lasound
     - cd src ; ldd "$BINARIUM_BIN" ; exit 0
     - cd src ; find . -name '*'"$BINARIUM_BIN"'*' -exec ls -al {} \; 2> /dev/null ; exit 0
-    - cd src ; . ~/pp ; $CC -O2 -Wall -Wextra -Wpedantic -o "$BINARIUM_BIN"_static "$BINARIUM_SRC" -static -std=gnu99 -L"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf/ -I"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf/ -lsodium -ltoxcore -ltoxav -lsodium -lpthread -static-libgcc -static-libstdc++ -lopus -lvpx -lm -lpthread -lv4lconvert -ljpeg -lm -lrt # -lasound
+    - cd src ; . ~/pp ; $CC -O2 -g -Wall -Wextra -Wpedantic -o "$BINARIUM_BIN"_static "$BINARIUM_SRC" -static -std=gnu99 -L"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf/ -I"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf/ -lsodium -ltoxcore -ltoxav -lsodium -lpthread -static-libgcc -static-libstdc++ -lopus -lvpx -lm -lpthread -lv4lconvert -ljpeg -lm -lrt # -lasound
     - cd src ; ls -al "$BINARIUM_BIN" "$BINARIUM_BIN"_static
     - cd src ;. ~/pp ; cp -av ./"$BINARIUM_BIN" $CIRCLE_ARTIFACTS/"${CUR_ARCH_}"/
     - cd src ;. ~/pp ; cp -av ./"$BINARIUM_BIN"_static $CIRCLE_ARTIFACTS/"${CUR_ARCH_}"/
@@ -207,10 +207,10 @@ dependencies:
 test:
   override:
     - cd src ; rm -fv "$BINARIUM_BIN" "$BINARIUM_BIN"_static
-    - cd src ; gcc -O2 -fPIC -o "$BINARIUM_BIN" "$BINARIUM_SRC" -std=gnu99 -lsodium -I/usr/local/include/ -ltoxcore -ltoxav -lpthread -lvpx
+    - cd src ; gcc -O2 -g -fPIC -o "$BINARIUM_BIN" "$BINARIUM_SRC" -std=gnu99 -lsodium -I/usr/local/include/ -ltoxcore -ltoxav -lpthread -lvpx
     - cd src ; ldd "$BINARIUM_BIN" ; exit 0
     - find / -name '*libjpeg*' 2> /dev/null ; exit 0
-    - cd src ; gcc -O2 -Wall -o "$BINARIUM_BIN"_static "$BINARIUM_SRC" -static -std=gnu99 -L/usr/local/lib -I/usr/local/include/ -lsodium -ltoxcore -ltoxav -ltoxgroup -ltoxmessenger -ltoxfriends -ltoxnetcrypto -ltoxdht -ltoxnetwork -ltoxcrypto -lsodium -lpthread -static-libgcc -static-libstdc++ -lopus -lvpx -lm -lpthread -lm -lrt
+    - cd src ; gcc -O2 -g -Wall -o "$BINARIUM_BIN"_static "$BINARIUM_SRC" -static -std=gnu99 -L/usr/local/lib -I/usr/local/include/ -lsodium -ltoxcore -ltoxav -ltoxgroup -ltoxmessenger -ltoxfriends -ltoxnetcrypto -ltoxdht -ltoxnetwork -ltoxcrypto -lsodium -lpthread -static-libgcc -static-libstdc++ -lopus -lvpx -lm -lpthread -lm -lrt
     - cd src ; ls -al "$BINARIUM_BIN" "$BINARIUM_BIN"_static
     - mkdir -p $CIRCLE_ARTIFACTS/ubuntu_14_04_binaries/
     - cp -av src/"$BINARIUM_BIN" $CIRCLE_ARTIFACTS/ubuntu_14_04_binaries/
