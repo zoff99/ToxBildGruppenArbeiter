@@ -40,8 +40,8 @@
 // ----------- version -----------
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 99
-#define VERSION_PATCH 3
-static const char global_version_string[] = "0.99.3";
+#define VERSION_PATCH 4
+static const char global_version_string[] = "0.99.4";
 // ----------- version -----------
 // ----------- version -----------
 
@@ -191,6 +191,17 @@ void yieldcpu(uint32_t ms)
 time_t get_unix_time(void)
 {
     return time(NULL);
+}
+
+/* ssssshhh I stole this from ToxBot, don't tell anyone.. */
+/* ssssshhh and I stole this from EchoBot, don't tell anyone.. */
+static void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs)
+{
+    long unsigned int minutes = (secs % 3600) / 60;
+    long unsigned int hours = (secs / 3600) % 24;
+    long unsigned int days = (secs / 3600) / 24;
+
+    snprintf(buf, bufsize, "%lud %luh %lum", days, hours, minutes);
 }
 
 void bin_to_hex_string(uint8_t *tox_id_bin, size_t tox_id_bin_len, char *toxid_str)
@@ -571,17 +582,6 @@ void friend_cleanup(Tox *tox)
 }
 
 
-/* taken from ToxBot */
-void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs)
-{
-    long unsigned int minutes = (secs % 3600) / 60;
-    long unsigned int hours = (secs / 3600) % 24;
-    long unsigned int days = (secs / 3600) / 24;
-
-    snprintf(buf, bufsize, "%lud %luh %lum", days, hours, minutes);
-}
-
-
 uint32_t get_online_friend_count(Tox *tox)
 {
     uint32_t online_friend_count = 0u;
@@ -641,6 +641,61 @@ void cb___friend_request(Tox *tox, const uint8_t *public_key, const uint8_t *mes
     update_savedata_file(tox);
 }
 
+void send_help_to_friend(Tox *tox, uint32_t friend_number)
+{
+    send_text_message_to_friend(tox, friend_number,
+                                "=========================\nBildGruppenArbeiter version:%s\n=========================",
+                                global_version_string);
+
+    send_text_message_to_friend(tox, friend_number, " .info          --> show status");
+    send_text_message_to_friend(tox, friend_number, " .settv <ToxID> --> Set <ToxID> as TV");
+    send_text_message_to_friend(tox, friend_number, " .deltv         --> Delete TV");
+    send_text_message_to_friend(tox, friend_number,
+                                " t              --> make me the current speaker");
+    send_text_message_to_friend(tox, friend_number, " .locksp        --> Lock current Speaker");
+    send_text_message_to_friend(tox, friend_number, " .unlocksp      --> Unlock Speaker");
+}
+
+void cmd_stats(Tox *tox, uint32_t friend_number)
+{
+    switch (my_connection_status)
+    {
+        case TOX_CONNECTION_NONE:
+            send_text_message_to_friend(tox, friend_number, "BildGruppenArbeiter status:offline");
+            break;
+        case TOX_CONNECTION_TCP:
+            send_text_message_to_friend(tox, friend_number,
+                                        "BildGruppenArbeiter status:Online, using TCP");
+            break;
+        case TOX_CONNECTION_UDP:
+            send_text_message_to_friend(tox, friend_number,
+                                        "BildGruppenArbeiter status:Online, using UDP");
+            break;
+        default:
+            send_text_message_to_friend(tox, friend_number, "BildGruppenArbeiter status:*unknown*");
+            break;
+    }
+
+    // ----- uptime -----
+    char time_str[200];
+    uint64_t cur_time = time(NULL);
+    get_elapsed_time_str(time_str, sizeof(time_str), cur_time - global_start_time);
+    send_text_message_to_friend(tox, friend_number, "Uptime: %s", time_str);
+    // ----- uptime -----
+
+    // ----- friends -----
+    send_text_message_to_friend(tox, friend_number, "Friends: %zu (%d online)",
+                                tox_self_get_friend_list_size(tox), get_online_friend_count(tox));
+    // ----- friends -----
+
+    // ----- ToxID -----
+    char tox_id_hex[TOX_ADDRESS_SIZE * 2 + 1];
+    get_my_toxid(tox, tox_id_hex);
+    send_text_message_to_friend(tox, friend_number, "tox:%s", tox_id_hex);
+    // ----- ToxID -----
+
+}
+
 void
 cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, const uint8_t *message,
                     size_t length, void *user_data)
@@ -649,32 +704,9 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
     dest_msg[length] = '\0';
     memcpy(dest_msg, message, length);
 
-    if (!strcmp(".info", dest_msg))
+    if (strncmp((char *) dest_msg, ".info", strlen((char *) ".info")) == 0)
     {
-        char time_msg[TOX_MAX_MESSAGE_LENGTH];
-        char time_str[64];
-        uint64_t cur_time = time(NULL);
-
-        get_elapsed_time_str(time_str, sizeof(time_str), cur_time - global_start_time);
-        snprintf(time_msg, sizeof(time_msg), "Uptime: %s", time_str);
-        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) time_msg,
-                                strlen(time_msg), NULL);
-
-        char friend_msg[100];
-        snprintf(friend_msg, sizeof(friend_msg), "Friends: %zu (%d online)",
-                 tox_self_get_friend_list_size(tox), get_online_friend_count(tox));
-        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) friend_msg,
-                                strlen(friend_msg), NULL);
-
-        // const char *friend_info_msg = "Friends are removed after 1 month of inactivity";
-        //tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL,
-        //                        (uint8_t *) friend_info_msg, strlen(friend_info_msg), NULL);
-	    
-        char tox_id_hex[TOX_ADDRESS_SIZE * 2 + 1];
-        get_my_toxid(tox, tox_id_hex);
-
-        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) tox_id_hex,
-                                strlen(tox_id_hex), NULL);
+        cmd_stats(tox, friend_number);
     }
     else if (!strncmp(".settv ", dest_msg, (size_t) 6))
     {
@@ -718,7 +750,7 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
             }
         }
     }
-    else if (!strncmp(".deltv", dest_msg, (size_t) strlen(".deltv")))
+    else if (strncmp((char *) dest_msg, ".deltv", strlen((char *) ".deltv")) == 0)
     {
         if (global_tv_toxid)
         {
@@ -735,31 +767,14 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
         }
         write_tvpubkey_to_file(NULL);
     }
-    else if (!strncmp("t", dest_msg, (size_t) strlen("t")))
+    else if (strncmp((char *) dest_msg, "t", strlen((char *) "t")) == 0)
     {
         friend_to_take_av_from = friend_number;
         dbg(9, "friend_to_take_av_from = %d [2]", (int) friend_to_take_av_from);
     }
-        //else if (!strcmp("!callme", dest_msg))
-        //{
-        //	toxav_call(mytox_av, friend_number, audio_bitrate, 0, NULL);
-        //}
-        //else if (!strcmp ("!videocallme", dest_msg))
-        //{
-        //	toxav_call(mytox_av, friend_number, audio_bitrate, video_bitrate, NULL);
-        //}
     else
     {
-        /* Send usage instructions in new message. */
-        static const char *help_msg = "Commands:\n\
-.info                  Show stats\n\
-.settv <ToxID>         Set <ToxID> as TV\n\
-.deltv                 Delete TV\n\
-t                      make me the current speaker\n\
-.locksp                Lock current Speaker\n\
-.unlocksp              Unlock Speaker";
-        tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) help_msg,
-                                strlen(help_msg), NULL);
+        send_help_to_friend(tox, friend_number);
     }
 }
 
