@@ -931,6 +931,8 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
     dest_msg[length] = '\0';
     memcpy(dest_msg, message, length);
 
+	dbg(9, "fnum=%d incoming message=%s", (int) friend_number, dest_msg);
+
     if (strncmp((char *) dest_msg, ".info", strlen((char *) ".info")) == 0)
     {
         cmd_stats(tox, friend_number);
