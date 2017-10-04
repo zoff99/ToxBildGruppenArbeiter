@@ -1062,7 +1062,7 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
         global_video_active = 1;
         dbg(9, "friend_to_take_av_from (CAM) = %d [2]", (int) friend_to_take_av_from);
     }
-    else
+    else if (strncmp((char *) dest_msg, "help", strlen((char *) "help")) == 0)
     {
         send_help_to_friend(tox, friend_number);
     }
