@@ -51,7 +51,8 @@ static const char global_version_string[] = "0.99.7";
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define c_sleep(x) usleep(1000*x)
 #define DEFAULT_FPS_SLEEP_MS 250 // 250=4fps, 500=2fps, 160=6fps  // default video fps (sleep in msecs.)
-
+#define DEFAULT_GLOBAL_MIN_VID_BITRATE 300 // kbit/sec
+#define DEFAULT_GLOBAL_MAX_VID_BITRATE 20000 // kbit/sec
 
 static uint64_t last_purge;
 uint64_t global_start_time;
@@ -1073,7 +1074,7 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
         if (strlen(dest_msg) > 7) // require 3 digits
         {
             int vbr_new = get_number_in_string(dest_msg, (int)video_bitrate);
-            if ((vbr_new > 300) && (vbr_new < 10000))
+            if ((vbr_new >= DEFAULT_GLOBAL_MIN_VID_BITRATE) && (vbr_new <= DEFAULT_GLOBAL_MAX_VID_BITRATE))
             {
                 video_bitrate = (int32_t)vbr_new;
                 toxav_bit_rate_set(mytox_av, friend_number, audio_bitrate, video_bitrate, NULL);
@@ -1190,6 +1191,41 @@ void cb___call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool vi
         }
     }
 }
+
+
+static void cb___bit_rate_status(ToxAV *av, uint32_t friend_number,
+                                       uint32_t audio_bit_rate, uint32_t video_bit_rate,
+                                       void *user_data)
+{
+
+
+	dbg(0, "cb___bit_rate_status:001 video_bit_rate=%d\n", (int)video_bit_rate);
+	dbg(0, "cb___bit_rate_status:001 audio_bit_rate=%d\n", (int)audio_bit_rate);
+
+	TOXAV_ERR_BIT_RATE_SET error = 0;
+
+	uint32_t video_bit_rate_ = video_bit_rate;
+
+	if (video_bit_rate < DEFAULT_GLOBAL_MIN_VID_BITRATE)
+	{
+		video_bit_rate_ = DEFAULT_GLOBAL_MIN_VID_BITRATE;
+	}
+
+	toxav_bit_rate_set(av, friend_number, audio_bit_rate, video_bit_rate_, &error);
+
+	if (error != 0)
+	{
+		dbg(0, "ToxAV:Setting new Video bitrate has failed with error #%u\n", error);
+	}
+	else
+	{
+		video_bitrate = video_bit_rate_;
+	}
+
+    dbg(2, "suggested bit rates: audio: %d video: %d\n", audio_bit_rate, video_bit_rate);
+    dbg(2, "actual    bit rates: audio: %d video: %d\n", audio_bitrate, video_bitrate);
+}
+
 
 void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void *user_data)
 {
@@ -2127,6 +2163,7 @@ int main(int argc, char *argv[])
     // init AV callbacks -------------------------------
     toxav_callback_call(mytox_av, cb___call, NULL);
     toxav_callback_call_state(mytox_av, cb___call_state, NULL);
+    toxav_callback_bit_rate_status(mytox_av, cb___bit_rate_status, NULL);
     toxav_callback_audio_receive_frame(mytox_av, cb___audio_receive_frame, NULL);
     toxav_callback_video_receive_frame(mytox_av, cb___video_receive_frame, NULL);
     // init AV callbacks -------------------------------
