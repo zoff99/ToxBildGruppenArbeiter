@@ -476,7 +476,8 @@ void start_av_call_to_tv(Tox *tox, uint32_t friendnum)
 {
     if (is_friend_online(tox, friendnum) == 1)
     {
-        send_text_message_to_friend(tox, friendnum, "i am trying to send my video ...");
+        // send_text_message_to_friend(tox, friendnum, "i am trying to send my video ...");
+        dbg(9, "start_av_call_to_tv ...");
 
         if (mytox_av != NULL)
         {
@@ -519,12 +520,14 @@ void start_av_call_to_tv(Tox *tox, uint32_t friendnum)
             else
             {
                 global_tv_video_active = 1;
-                send_text_message_to_friend(tox, friendnum, "starting call to TV");
+                // send_text_message_to_friend(tox, friendnum, "starting call to TV");
+                dbg(9, "starting call to TV");
             }
         }
         else
         {
-            send_text_message_to_friend(tox, friendnum, "sending video failed:toxav==NULL");
+            // send_text_message_to_friend(tox, friendnum, "sending video failed:toxav==NULL");
+            dbg(9, "sending video failed:toxav==NULL");
         }
     }
 }
@@ -2106,8 +2109,6 @@ int main(int argc, char *argv[])
 
     update_savedata_file(tox);
 
-    global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
-
     // -------- try to go online --------
     long long unsigned int cur_time = time(NULL);
     uint8_t off = 1;
@@ -2140,7 +2141,9 @@ int main(int argc, char *argv[])
         if (global_tv_toxid != NULL)
         {
             invite_tv_as_friend(tox, global_tv_toxid);
+            dbg(9, "invite_tv_as_friend %d", (int)global_tv_toxid);
             global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
+            dbg(9, "global_tv_friendnum %d", (int)global_tv_friendnum);
             update_savedata_file(tox);
         }
     }
@@ -2150,7 +2153,9 @@ int main(int argc, char *argv[])
         if (global_cam_toxid != NULL)
         {
             invite_cam_as_friend(tox, global_cam_toxid);
+            dbg(9, "invite_cam_as_friend %d", (int)global_cam_toxid);
             global_cam_friendnum = friend_number_for_cam(tox, global_cam_toxid);
+            dbg(9, "global_cam_friendnum %d", (int)global_cam_friendnum);
             update_savedata_file(tox);
         }
     }
@@ -2218,6 +2223,16 @@ int main(int argc, char *argv[])
             check_online_status(tox);
             if (global_tv_video_active == 0)
             {
+                if (global_tv_friendnum == -1)
+                {
+                    if (global_tv_toxid != NULL)
+                    {
+                        global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
+                        dbg(9, "global_tv_friendnum %d", (int)global_tv_friendnum);
+                        update_savedata_file(tox);
+                    }
+                }
+
                 if (is_friend_online(tox, global_tv_friendnum) == 1)
                 {
                     start_av_call_to_tv(tox, global_tv_friendnum);
