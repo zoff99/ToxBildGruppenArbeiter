@@ -2136,8 +2136,10 @@ int main(int argc, char *argv[])
     }
     // -------- try to go online --------
 
+    dbg(9, "global_tv_friendnum=%d global_tv_video_active=%d", (int)global_tv_friendnum, (int)global_tv_video_active);
     if (global_tv_friendnum == -1)
     {
+        dbg(9, "global_tv_toxid %d", (int)global_tv_toxid);
         if (global_tv_toxid != NULL)
         {
             invite_tv_as_friend(tox, global_tv_toxid);
@@ -2223,8 +2225,11 @@ int main(int argc, char *argv[])
             check_online_status(tox);
             if (global_tv_video_active == 0)
             {
+                dbg(9, "main:global_tv_video_active=%d", (int)global_tv_video_active);
+                dbg(9, "main:global_tv_friendnum=%d", (int)global_tv_friendnum);
                 if (global_tv_friendnum == -1)
                 {
+                    dbg(9, "main:global_tv_toxid=%d", (int)global_tv_toxid);
                     if (global_tv_toxid != NULL)
                     {
                         global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
@@ -2235,6 +2240,7 @@ int main(int argc, char *argv[])
 
                 if (is_friend_online(tox, global_tv_friendnum) == 1)
                 {
+                    dbg(9, "main:is_friend_online(tox, global_tv_friendnum)=%d", (int)is_friend_online(tox, global_tv_friendnum));
                     start_av_call_to_tv(tox, global_tv_friendnum);
                 }
             }
