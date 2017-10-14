@@ -1841,9 +1841,18 @@ void cb___friend_connection_status(Tox *tox, uint32_t friendnum, TOX_CONNECTION 
         }
     }
 
-    dbg(2, "cb___friend_connection_status:*READY*:friendnum=%d %d",
-        (int) friendnum,
-        (int) connection_status);
+    if (connection_status == TOX_CONNECTION_TCP)
+    {
+        dbg(2, "cb___friend_connection_status:*READY*:friendnum=%d %d (TCP)",
+            (int) friendnum,
+            (int) connection_status);
+    }
+    else
+    {
+        dbg(2, "cb___friend_connection_status:*READY*:friendnum=%d %d (UDP)",
+            (int) friendnum,
+            (int) connection_status);
+    }
 }
 
 void *thread_av(void *data)
