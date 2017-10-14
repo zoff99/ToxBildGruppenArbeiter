@@ -2294,7 +2294,7 @@ int main(int argc, char *argv[])
                 if (global_video_active == 1)
                 {
                     dbg(9, "main:global_tv_friendnum=%d", (int)global_tv_friendnum);
-                    if (global_tv_friendnum == -1)
+                    if (global_tv_friendnum != -1)
                     {
                         dbg(9, "main:is_friend_online(tox, global_tv_friendnum)=%d", (int)is_friend_online(tox, global_tv_friendnum));
                         if (is_friend_online(tox, global_tv_friendnum) == 1)
