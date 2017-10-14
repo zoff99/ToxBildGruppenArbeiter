@@ -1271,6 +1271,15 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
         {
             global_cam_video_active = 0;
         }
+
+        if (friend_to_take_av_from == friend_number)
+        {
+            friend_to_take_av_from = -1;
+            global_video_active = 0;
+            dbg(9, "friend_to_take_av_from = -1 [9]");
+            dbg(9, "global_video_active = 0 [9]");
+        }
+
         return;
     }
     else if (state & TOXAV_FRIEND_CALL_STATE_ERROR)
@@ -2277,11 +2286,11 @@ int main(int argc, char *argv[])
             check_online_status(tox);
             if (global_tv_video_active == 0)
             {
-                dbg(9, "main:global_tv_video_active=%d", (int)global_tv_video_active);
-                dbg(9, "main:global_tv_friendnum=%d", (int)global_tv_friendnum);
+                // dbg(9, "main:global_tv_video_active=%d", (int)global_tv_video_active);
+                // dbg(9, "main:global_tv_friendnum=%d", (int)global_tv_friendnum);
                 if (global_tv_friendnum == -1)
                 {
-                    dbg(9, "main:global_tv_toxid=%d", (int)global_tv_toxid);
+                    // dbg(9, "main:global_tv_toxid=%d", (int)global_tv_toxid);
                     if (global_tv_toxid != NULL)
                     {
                         global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
@@ -2290,13 +2299,13 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                dbg(9, "main:global_video_active=%d", (int)global_video_active);
+                // dbg(9, "main:global_video_active=%d", (int)global_video_active);
                 if (global_video_active == 1)
                 {
-                    dbg(9, "main:global_tv_friendnum=%d", (int)global_tv_friendnum);
+                    // dbg(9, "main:global_tv_friendnum=%d", (int)global_tv_friendnum);
                     if (global_tv_friendnum != -1)
                     {
-                        dbg(9, "main:is_friend_online(tox, global_tv_friendnum)=%d", (int)is_friend_online(tox, global_tv_friendnum));
+                        // dbg(9, "main:is_friend_online(tox, global_tv_friendnum)=%d", (int)is_friend_online(tox, global_tv_friendnum));
                         if (is_friend_online(tox, global_tv_friendnum) == 1)
                         {
                             dbg(9, "main:is_friend_online(tox, global_tv_friendnum)=%d global_tv_friendnum=%d", (int)is_friend_online(tox, global_tv_friendnum), (int)global_tv_friendnum);
