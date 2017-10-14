@@ -1064,10 +1064,12 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
 
                 // TODO: remove old TV as friend (but only if TV ToxID has really changed)
                 global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
+                dbg(9, "[1]global_tv_friendnum %d", (int)global_tv_friendnum);
                 if (global_tv_friendnum == -1)
                 {
                     invite_tv_as_friend(tox, global_tv_toxid);
                     global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
+                    dbg(9, "[2]global_tv_friendnum %d", (int)global_tv_friendnum);
                 }
                 else
                 {
@@ -1125,6 +1127,7 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
             global_tv_toxid = NULL;
             dbg(9, "global_tv_toxid(4)=NULL");
             global_tv_friendnum = -1;
+            dbg(9, "[3]global_tv_friendnum %d", (int)global_tv_friendnum);
         }
         write_tvpubkey_to_file(NULL);
     }
@@ -2123,6 +2126,7 @@ int main(int argc, char *argv[])
 
     global_tv_toxid = NULL;
     global_tv_friendnum = -1;
+    dbg(9, "[4]global_tv_friendnum %d", (int)global_tv_friendnum);
     global_tv_video_active = 0;
     dbg(9, "main:global_tv_toxid [1] %d", (int)global_tv_toxid);
     read_tvpubkey_from_file(&global_tv_toxid);
@@ -2172,7 +2176,7 @@ int main(int argc, char *argv[])
             invite_tv_as_friend(tox, global_tv_toxid);
             dbg(9, "invite_tv_as_friend %d", (int)global_tv_toxid);
             global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
-            dbg(9, "global_tv_friendnum %d", (int)global_tv_friendnum);
+            dbg(9, "[5]global_tv_friendnum %d", (int)global_tv_friendnum);
             update_savedata_file(tox);
         }
     }
@@ -2260,7 +2264,7 @@ int main(int argc, char *argv[])
                     if (global_tv_toxid != NULL)
                     {
                         global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
-                        dbg(9, "global_tv_friendnum %d", (int)global_tv_friendnum);
+                        dbg(9, "[6]global_tv_friendnum %d", (int)global_tv_friendnum);
                         update_savedata_file(tox);
                     }
                 }
