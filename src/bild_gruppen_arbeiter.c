@@ -1254,12 +1254,12 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
         dbg(9, "Call with friend %d errored", friend_number);
         if (friend_number == global_tv_friendnum)
         {
-            av_local_disconnect(mytox_av, friendnum);
+            av_local_disconnect(mytox_av, friend_number);
             global_tv_video_active = 0;
         }
         else if (friend_number == global_cam_friendnum)
         {
-            av_local_disconnect(mytox_av, friendnum);
+            av_local_disconnect(mytox_av, friend_number);
             global_cam_video_active = 0;
         }
         else
@@ -1271,7 +1271,7 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
                 dbg(9, "friend_to_take_av_from = -1 [7]");
                 dbg(9, "global_video_active = 0 [7]");
             }
-            av_local_disconnect(mytox_av, friendnum);
+            av_local_disconnect(mytox_av, friend_number);
         }
 
         return;
