@@ -1166,8 +1166,7 @@ void cb___call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool vi
                void *user_data)
 {
     TOXAV_ERR_ANSWER err;
-    toxav_answer(toxAV, friend_number, audio_enabled ? audio_bitrate : 0,
-                 video_enabled ? video_bitrate : 0, &err);
+    toxav_answer(toxAV, friend_number, audio_bitrate, video_bitrate, &err);
 
     if (err != TOXAV_ERR_ANSWER_OK)
     {
@@ -1177,17 +1176,17 @@ void cb___call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool vi
     {
         dbg(9, "cb___call:friend_to_take_av_from=%d", (int) friend_to_take_av_from);
         dbg(9, "cb___call:friend_number=%d", (int) friend_number);
-        if (friend_to_take_av_from == -1)
+        if (friend_to_take_av_from == friend_number)
+        {
+            global_video_active = 1;
+            dbg(9, "cb___call:global_video_active = 1 [8]");
+        }
+        else if (friend_to_take_av_from == -1)
         {
             friend_to_take_av_from = friend_number;
             global_video_active = 1;
             dbg(9, "cb___call:friend_to_take_av_from = %d [7]", (int) friend_to_take_av_from);
             dbg(9, "cb___call:global_video_active = 1 [7]");
-        }
-        else if (friend_to_take_av_from == friend_number)
-        {
-            global_video_active = 1;
-            dbg(9, "cb___call:global_video_active = 1 [8]");
         }
     }
 }
@@ -1197,7 +1196,6 @@ static void cb___bit_rate_status(ToxAV *av, uint32_t friend_number,
                                        uint32_t audio_bit_rate, uint32_t video_bit_rate,
                                        void *user_data)
 {
-
 
 	dbg(0, "cb___bit_rate_status:001 video_bit_rate=%d\n", (int)video_bit_rate);
 	dbg(0, "cb___bit_rate_status:001 audio_bit_rate=%d\n", (int)audio_bit_rate);
@@ -1259,9 +1257,14 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
     }
 
 
-    if (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_V)
+    if (
+         (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_V) ||
+         (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_A) ||
+         (state & TOXAV_FRIEND_CALL_STATE_SENDING_V) ||
+         (state & TOXAV_FRIEND_CALL_STATE_SENDING_A)
+       )
     {
-        dbg(9, "friend %d accepted Video call", (int) friend_number);
+        dbg(9, "friend %d accepted call", (int) friend_number);
         dbg(9, "global_tv_friendnum=%d", (int) global_tv_friendnum);
 
         if (friend_number == global_cam_friendnum)
@@ -1300,8 +1303,7 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
                       (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_V);
     // ** deactviated ** // toxav_bit_rate_set(toxAV, friend_number, send_audio ? audio_bitrate : 0, send_video ? video_bitrate : 0, NULL);
 
-    dbg(9, "Call state for friend %d changed to %d: audio: %d, video: %d", friend_number, state,
-        send_audio, send_video);
+    dbg(9, "Call state for friend %d changed to %d: audio: %d, video: %d", friend_number, state, send_audio, send_video);
 }
 
 void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_t *pcm,
