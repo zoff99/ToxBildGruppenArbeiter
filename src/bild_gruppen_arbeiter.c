@@ -1343,6 +1343,7 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
                             // dbg(9, "Could not send audio frame to TV: %d, error: %d",
                             //    friend_number,
                             //    err);
+                            global_tv_video_active = 0;
                         }
                     }
                 }
@@ -1445,8 +1446,9 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                                                &err);
                         if (err != TOXAV_ERR_SEND_FRAME_OK)
                         {
-                            dbg(9, "Could not send video frame to TV: %d, error: %d", friend_number,
-                               err);
+                            dbg(9, "Could not send video frame to TV: %d, error: %d", (int)global_tv_friendnum,
+                               (int)err);
+                            global_tv_video_active = 0;
                         }
                     }
                 }
@@ -1479,8 +1481,8 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                             if (err != TOXAV_ERR_SEND_FRAME_OK)
                             {
                                 dbg(9, "Could not send video frame to friend: %d, error: %d",
-                                   friend_number,
-                                   err);
+                                   (int)list[i],
+                                   (int)err);
                             }
                         }
                     }
