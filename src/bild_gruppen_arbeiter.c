@@ -2260,17 +2260,20 @@ int main(int argc, char *argv[])
                     if (global_tv_toxid != NULL)
                     {
                         global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
-                        // dbg(9, "global_tv_friendnum %d", (int)global_tv_friendnum);
+                        dbg(9, "global_tv_friendnum %d", (int)global_tv_friendnum);
                         update_savedata_file(tox);
                     }
                 }
 
                 if (global_video_active == 1)
                 {
-                    if (is_friend_online(tox, global_tv_friendnum) == 1)
+                    if (global_tv_friendnum == -1)
                     {
-                        dbg(9, "main:is_friend_online(tox, global_tv_friendnum)=%d", (int)is_friend_online(tox, global_tv_friendnum));
-                        start_av_call_to_tv(tox, global_tv_friendnum);
+                        if (is_friend_online(tox, global_tv_friendnum) == 1)
+                        {
+                            dbg(9, "main:is_friend_online(tox, global_tv_friendnum)=%d global_tv_friendnum=%d", (int)is_friend_online(tox, global_tv_friendnum), (int)global_tv_friendnum);
+                            start_av_call_to_tv(tox, global_tv_friendnum);
+                        }
                     }
                 }
             }
@@ -2287,7 +2290,7 @@ int main(int argc, char *argv[])
             {
                 if (global_tv_video_active == 1)
                 {
-                    if (global_tv_friendnum =! -1)
+                    if (global_tv_friendnum != -1)
                     {
                         // no active caller, hang up TV call
                         av_local_disconnect(mytox_av, global_tv_friendnum);
