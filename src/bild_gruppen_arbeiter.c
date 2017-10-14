@@ -2291,7 +2291,7 @@ int main(int argc, char *argv[])
                     {
                         // no active caller, hang up TV call
                         av_local_disconnect(mytox_av, global_tv_friendnum);
-                        dbg(9, "main:av_local_disconnect %d hang up call to TV", (int)global_tv_friendnum));
+                        dbg(9, "main:av_local_disconnect %d hang up call to TV", (int)global_tv_friendnum);
                     }
                 }
             }
