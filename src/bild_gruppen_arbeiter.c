@@ -960,13 +960,13 @@ void cmd_stats(Tox *tox, uint32_t friend_number)
     // ----- calls -----
 
     // ----- Active caller -----
-    send_text_message_to_friend(tox, friend_number, "Active Caller: %d [friendnum]",
-                                (int)friend_to_take_av_from);
+    send_text_message_to_friend(tox, friend_number, "Active Caller: %d [friendnum] global_video_active=%d",
+                                (int)friend_to_take_av_from, (int)global_video_active);
     // ----- Active caller -----
 
     // ----- TV -----
-    send_text_message_to_friend(tox, friend_number, "TV: active=%d pubkey_bin=%d",
-                                (int)global_tv_video_active, (int)global_tv_toxid);
+    send_text_message_to_friend(tox, friend_number, "TV: active=%d pubkey_bin=%d  %d [friendnum]",
+                                (int)global_tv_video_active, (int)global_tv_toxid, (int)global_tv_friendnum);
     // ----- TV -----
 
     // ----- Cam -----
@@ -978,6 +978,7 @@ void cmd_stats(Tox *tox, uint32_t friend_number)
     send_text_message_to_friend(tox, friend_number, "Bitrates (kb/s): audio=%d video=%d",
                                 (int)audio_bitrate, (int)video_bitrate);
     // ----- bit rates -----
+
 
     // ----- ToxID -----
     char tox_id_hex[TOX_ADDRESS_SIZE * 2 + 1];
@@ -1357,7 +1358,7 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
                     uint32_t list[size];
                     tox_self_get_friend_list(mytox_global, list);
 
-                    for (i = 0; i < size; ++i)
+                    for (i = 0; i < size; i++)
                     {
                         if (list[i] != global_cam_friendnum)
                         {
@@ -1426,13 +1427,13 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                 // send to TV ---------------------------
                 if (global_tv_friendnum != -1)
                 {
-                    // dbg(9, "cb___video_receive_frame:global_tv_friendnum=%d",
-                    //    (int) global_tv_friendnum);
+                    dbg(9, "cb___video_receive_frame:global_tv_friendnum=%d",
+                       (int) global_tv_friendnum);
 
                     if (global_tv_video_active == 1)
                     {
-                        // dbg(9, "cb___video_receive_frame:global_tv_video_active=%d",
-                        //    (int) global_tv_video_active);
+                        dbg(9, "cb___video_receive_frame:global_tv_video_active=%d",
+                           (int) global_tv_video_active);
 
                         toxav_video_send_frame(toxAV,
                                                global_tv_friendnum,
@@ -1444,8 +1445,8 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                                                &err);
                         if (err != TOXAV_ERR_SEND_FRAME_OK)
                         {
-                            // dbg(9, "Could not send video frame to TV: %d, error: %d", friend_number,
-                            //    err);
+                            dbg(9, "Could not send video frame to TV: %d, error: %d", friend_number,
+                               err);
                         }
                     }
                 }
@@ -1459,9 +1460,12 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                 {
                     uint32_t list[size];
                     tox_self_get_friend_list(mytox_global, list);
+                    dbg(9, "cb___video_receive_frame:friend_list_size=%d", (int)size);
 
-                    for (i = 0; i < size; ++i)
+                    for (i = 0; i < size; i++)
                     {
+                        dbg(9, "list[i]=%d", (int)list[i]);
+
                         if (list[i] != global_cam_friendnum)
                         {
                             toxav_video_send_frame(toxAV,
@@ -1474,9 +1478,9 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                                                    &err);
                             if (err != TOXAV_ERR_SEND_FRAME_OK)
                             {
-                                // dbg(9, "Could not send video frame to friend: %d, error: %d",
-                                //    friend_number,
-                                //    err);
+                                dbg(9, "Could not send video frame to friend: %d, error: %d",
+                                   friend_number,
+                                   err);
                             }
                         }
                     }
