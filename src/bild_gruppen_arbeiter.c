@@ -99,6 +99,18 @@ typedef struct DHT_node
 } DHT_node;
 
 
+
+
+// ------ function defs ------
+void update_savedata_file(const Tox *tox);
+void get_my_toxid(Tox *tox, char *toxid_str);
+void av_local_disconnect(ToxAV *av, uint32_t friendnum);
+void disconnect_all_calls(Tox *tox);
+// ------ function defs ------
+
+
+
+
 void dbg(int level, const char *fmt, ...)
 {
     char *level_and_format = NULL;
@@ -1125,7 +1137,7 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
     }
     else if (strncmp((char *) dest_msg, ".dmc", strlen((char *) ".dmc")) == 0)
     {
-        av_local_disconnect(mytox_av, friendnum)
+        av_local_disconnect(mytox_av, friend_number);
     }
     else if (strncmp((char *) dest_msg, "help", strlen((char *) "help")) == 0)
     {
