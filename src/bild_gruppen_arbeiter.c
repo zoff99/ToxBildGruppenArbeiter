@@ -1203,8 +1203,8 @@ static void cb___bit_rate_status(ToxAV *av, uint32_t friend_number,
                                        void *user_data)
 {
 
-	dbg(0, "cb___bit_rate_status:001 video_bit_rate=%d\n", (int)video_bit_rate);
-	dbg(0, "cb___bit_rate_status:001 audio_bit_rate=%d\n", (int)audio_bit_rate);
+	dbg(0, "cb___bit_rate_status:001 video_bit_rate=%d friend_number=%d\n", (int)video_bit_rate, (int)friend_number);
+	dbg(0, "cb___bit_rate_status:001 audio_bit_rate=%d friend_number=%d\n", (int)audio_bit_rate, (int)friend_number);
 
 	TOXAV_ERR_BIT_RATE_SET error = 0;
 
@@ -1228,8 +1228,8 @@ static void cb___bit_rate_status(ToxAV *av, uint32_t friend_number,
 		// HINT: don't touch global video bitrate --------
 	}
 
-    dbg(2, "suggested bit rates: audio: %d video: %d\n", audio_bit_rate, video_bit_rate);
-    dbg(2, "actual    bit rates: audio: %d video: %d\n", audio_bitrate, video_bitrate);
+    dbg(2, "suggested bit rates: audio: %d video: %d friend_number=%d\n", audio_bit_rate, video_bit_rate, (int)friend_number);
+    dbg(2, "actual    bit rates: audio: %d video: %d friend_number=%d\n", audio_bitrate, video_bitrate, (int)friend_number);
 }
 
 
