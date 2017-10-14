@@ -274,13 +274,13 @@ uint8_t *hex_string_to_bin(const char *hex_string)
     uint8_t *val = malloc(len);
     memset(val, 0, (size_t) len);
 
-    // dbg(9, "hex_string_to_bin:len=%d\n", (int)len);
+    dbg(9, "hex_string_to_bin:len=%d\n", (int)len);
 
     for (size_t i = 0; i != len; ++i)
     {
-        // dbg(9, "hex_string_to_bin:%d %d\n", hex_string[2*i], hex_string[2*i+1]);
+        dbg(9, "hex_string_to_bin:%d %d\n", hex_string[2*i], hex_string[2*i+1]);
         val[i] = (16 * char_to_int(hex_string[2 * i])) + (char_to_int(hex_string[2 * i + 1]));
-        // dbg(9, "hex_string_to_bin:i=%d val[i]=%d\n", i, (int)val[i]);
+        dbg(9, "hex_string_to_bin:i=%d val[i]=%d\n", i, (int)val[i]);
     }
 
     return val;
@@ -738,6 +738,12 @@ void read_tvpubkey_from_file(uint8_t *tv_pubkey)
     while (fgets(id, sizeof(id), fp))
     {
         len = strlen(id);
+
+        if (id)
+        {
+            dbg(9, "id=%s", id);
+        }
+
         if (--len < TOX_PUBLIC_KEY_SIZE)
         {
             continue;
@@ -2081,7 +2087,9 @@ int main(int argc, char *argv[])
     global_tv_toxid = NULL;
     global_tv_friendnum = -1;
     global_tv_video_active = 0;
+    dbg(9, "main:global_tv_toxid[1] %d", (int)global_tv_toxid);
     read_tvpubkey_from_file(global_tv_toxid);
+    dbg(9, "main:global_tv_toxid[2] %d", (int)global_tv_toxid);
 
     global_cam_toxid = NULL;
     global_cam_friendnum = -1;
@@ -2225,15 +2233,15 @@ int main(int argc, char *argv[])
             check_online_status(tox);
             if (global_tv_video_active == 0)
             {
-                dbg(9, "main:global_tv_video_active=%d", (int)global_tv_video_active);
-                dbg(9, "main:global_tv_friendnum=%d", (int)global_tv_friendnum);
+                // dbg(9, "main:global_tv_video_active=%d", (int)global_tv_video_active);
+                // dbg(9, "main:global_tv_friendnum=%d", (int)global_tv_friendnum);
                 if (global_tv_friendnum == -1)
                 {
-                    dbg(9, "main:global_tv_toxid=%d", (int)global_tv_toxid);
+                    // dbg(9, "main:global_tv_toxid=%d", (int)global_tv_toxid);
                     if (global_tv_toxid != NULL)
                     {
                         global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
-                        dbg(9, "global_tv_friendnum %d", (int)global_tv_friendnum);
+                        // dbg(9, "global_tv_friendnum %d", (int)global_tv_friendnum);
                         update_savedata_file(tox);
                     }
                 }
