@@ -274,13 +274,13 @@ uint8_t *hex_string_to_bin(const char *hex_string)
     uint8_t *val = malloc(len);
     memset(val, 0, (size_t) len);
 
-    dbg(9, "hex_string_to_bin:len=%d\n", (int)len);
+    // dbg(9, "hex_string_to_bin:len=%d\n", (int)len);
 
     for (size_t i = 0; i != len; ++i)
     {
-        dbg(9, "hex_string_to_bin:%d %d\n", hex_string[2*i], hex_string[2*i+1]);
+        // dbg(9, "hex_string_to_bin:%d %d\n", hex_string[2*i], hex_string[2*i+1]);
         val[i] = (16 * char_to_int(hex_string[2 * i])) + (char_to_int(hex_string[2 * i + 1]));
-        dbg(9, "hex_string_to_bin:i=%d val[i]=%d\n", i, (int)val[i]);
+        // dbg(9, "hex_string_to_bin:i=%d val[i]=%d\n", i, (int)val[i]);
     }
 
     return val;
