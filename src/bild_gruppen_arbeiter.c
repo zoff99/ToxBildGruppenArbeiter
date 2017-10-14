@@ -474,12 +474,12 @@ void start_av_call_to_cam(Tox *tox, uint32_t friendnum)
 
 void start_av_call_to_tv(Tox *tox, uint32_t friendnum)
 {
-    if (global_tv_video_active == 0)
-    {
+   if (global_tv_video_active == 0)
+   {
     if (is_friend_online(tox, friendnum) == 1)
     {
         // send_text_message_to_friend(tox, friendnum, "i am trying to send my video ...");
-        dbg(9, "start_av_call_to_tv ...");
+        dbg(9, "start_av_call_to_tv ... %d", (int)friendnum);
 
         if (mytox_av != NULL)
         {
@@ -532,7 +532,7 @@ void start_av_call_to_tv(Tox *tox, uint32_t friendnum)
             dbg(9, "sending video failed:toxav==NULL");
         }
     }
-    }
+   }
 }
 
 void invite_cam_as_friend(Tox *tox, uint8_t *tox_id_cam_bin)
