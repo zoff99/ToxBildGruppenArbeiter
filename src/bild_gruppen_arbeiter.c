@@ -691,10 +691,10 @@ void create_tv_file_if_not_exists()
     }
 }
 
-void read_campubkey_from_file(uint8_t *cam_pubkey)
+void read_campubkey_from_file(uint8_t **cam_pubkey)
 {
     create_cam_file_if_not_exists();
-    cam_pubkey = NULL;
+    *cam_pubkey = NULL;
 
     FILE *fp = fopen(cam_pubkey_filename, "r");
     if (fp == NULL)
@@ -708,12 +708,12 @@ void read_campubkey_from_file(uint8_t *cam_pubkey)
     while (fgets(id, sizeof(id), fp))
     {
         len = strlen(id);
-        if (--len < TOX_PUBLIC_KEY_SIZE)
+        if (len < (TOX_ADDRESS_SIZE * 2))
         {
             continue;
         }
 
-        cam_pubkey = hex_string_to_bin(id);
+        *cam_pubkey = hex_string_to_bin(id);
         break;
     }
 
@@ -721,10 +721,10 @@ void read_campubkey_from_file(uint8_t *cam_pubkey)
 }
 
 
-void read_tvpubkey_from_file(uint8_t *tv_pubkey)
+void read_tvpubkey_from_file(uint8_t **tv_pubkey)
 {
     create_tv_file_if_not_exists();
-    tv_pubkey = NULL;
+    *tv_pubkey = NULL;
 
     FILE *fp = fopen(tv_pubkey_filename, "r");
     if (fp == NULL)
@@ -738,18 +738,12 @@ void read_tvpubkey_from_file(uint8_t *tv_pubkey)
     while (fgets(id, sizeof(id), fp))
     {
         len = strlen(id);
-
-        if (id)
-        {
-            dbg(9, "id=%s", id);
-        }
-
-        if (--len < TOX_PUBLIC_KEY_SIZE)
+        if (len < (TOX_ADDRESS_SIZE * 2))
         {
             continue;
         }
 
-        tv_pubkey = hex_string_to_bin(id);
+        *tv_pubkey = hex_string_to_bin(id);
         break;
     }
 
@@ -2084,18 +2078,6 @@ int main(int argc, char *argv[])
     global_video_active = 0;
     friend_to_take_av_from = -1;
 
-    global_tv_toxid = NULL;
-    global_tv_friendnum = -1;
-    global_tv_video_active = 0;
-    dbg(9, "main:global_tv_toxid[1] %d", (int)global_tv_toxid);
-    read_tvpubkey_from_file(global_tv_toxid);
-    dbg(9, "main:global_tv_toxid[2] %d", (int)global_tv_toxid);
-
-    global_cam_toxid = NULL;
-    global_cam_friendnum = -1;
-    global_cam_video_active = 0;
-    read_campubkey_from_file(global_cam_toxid);
-
     Tox *tox = create_tox();
     mytox_global = tox;
     global_start_time = time(NULL);
@@ -2114,6 +2096,20 @@ int main(int argc, char *argv[])
     tox_callback_friend_connection_status(tox, cb___friend_connection_status);
     tox_callback_file_recv(tox, cb___file_recv);
     // init callbacks ----------------------------------
+
+
+    global_tv_toxid = NULL;
+    global_tv_friendnum = -1;
+    global_tv_video_active = 0;
+    dbg(9, "main:global_tv_toxid[1] %d", (int)global_tv_toxid);
+    read_tvpubkey_from_file(&global_tv_toxid);
+    dbg(9, "main:global_tv_toxid[2] %d", (int)global_tv_toxid);
+
+    global_cam_toxid = NULL;
+    global_cam_friendnum = -1;
+    global_cam_video_active = 0;
+    read_campubkey_from_file(&global_cam_toxid);
+
 
     update_savedata_file(tox);
 
