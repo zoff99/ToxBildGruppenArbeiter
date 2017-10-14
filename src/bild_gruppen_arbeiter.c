@@ -2265,9 +2265,9 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                if (is_friend_online(tox, global_tv_friendnum) == 1)
+                if (global_video_active == 1)
                 {
-                    if (global_video_active == 0)
+                    if (is_friend_online(tox, global_tv_friendnum) == 1)
                     {
                         dbg(9, "main:is_friend_online(tox, global_tv_friendnum)=%d", (int)is_friend_online(tox, global_tv_friendnum));
                         start_av_call_to_tv(tox, global_tv_friendnum);
