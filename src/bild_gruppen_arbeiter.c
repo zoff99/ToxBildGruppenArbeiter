@@ -39,8 +39,8 @@
 // ----------- version -----------
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 99
-#define VERSION_PATCH 6
-static const char global_version_string[] = "0.99.6";
+#define VERSION_PATCH 7
+static const char global_version_string[] = "0.99.7";
 // ----------- version -----------
 // ----------- version -----------
 
@@ -56,8 +56,8 @@ static const char global_version_string[] = "0.99.6";
 static uint64_t last_purge;
 uint64_t global_start_time;
 
-static const int32_t audio_bitrate = 8; // kbits/s
-static const int32_t video_bitrate = 2500; // kbits/s
+static int32_t audio_bitrate = 8; // kbits/s
+static int32_t video_bitrate = 2500; // kbits/s
 static const char *savedata_filename = "savedata.tox";
 const char *savedata_tmp_filename = "savedata.tox.tmp";
 const char *log_filename = "bild_gruppen_arbeiter.log";
@@ -196,6 +196,21 @@ void yieldcpu(uint32_t ms)
 time_t get_unix_time(void)
 {
     return time(NULL);
+}
+
+int get_number_in_string(const char *str, int default_value)
+{
+    int number;
+
+    while (!(*str >= '0' && *str <= '9') && (*str != '-') && (*str != '+')) str++;
+
+    if (sscanf(str, "%d", &number) == 1)
+    {
+        return number;
+    }
+
+    // no int found, return default value
+    return default_value; 
 }
 
 /* ssssshhh I stole this from ToxBot, don't tell anyone.. */
@@ -877,10 +892,15 @@ void send_help_to_friend(Tox *tox, uint32_t friend_number)
     send_text_message_to_friend(tox, friend_number, " .info          --> show status");
     send_text_message_to_friend(tox, friend_number, " .settv <ToxID> --> Set <ToxID> as TV");
     send_text_message_to_friend(tox, friend_number, " .deltv         --> Delete TV");
+    send_text_message_to_friend(tox, friend_number, " .setcam <ToxID>--> Set <ToxID> as Cam");
+    send_text_message_to_friend(tox, friend_number, " .delcam        --> Delete Cam");
     send_text_message_to_friend(tox, friend_number,
                                 " t              --> make me the current speaker");
     send_text_message_to_friend(tox, friend_number, " .locksp        --> Lock current Speaker");
     send_text_message_to_friend(tox, friend_number, " .unlocksp      --> Unlock Speaker");
+    send_text_message_to_friend(tox, friend_number, " .vbr <number>  --> Set <number> as video bitrate");
+    send_text_message_to_friend(tox, friend_number, " .kac           --> Kill all calls");
+    send_text_message_to_friend(tox, friend_number, " .dmc           --> Disconnect my calls");
 }
 
 void cmd_stats(Tox *tox, uint32_t friend_number)
@@ -914,6 +934,31 @@ void cmd_stats(Tox *tox, uint32_t friend_number)
     send_text_message_to_friend(tox, friend_number, "Friends: %zu (%d online)",
                                 tox_self_get_friend_list_size(tox), get_online_friend_count(tox));
     // ----- friends -----
+
+    // ----- calls -----
+    // send_text_message_to_friend(tox, friend_number, "Calls: %d active calls",
+    //                            (int)1);
+    // ----- calls -----
+
+    // ----- Active caller -----
+    send_text_message_to_friend(tox, friend_number, "Active Caller: %d [friendnum]",
+                                (int)friend_to_take_av_from);
+    // ----- Active caller -----
+
+    // ----- TV -----
+    send_text_message_to_friend(tox, friend_number, "TV: active=%d pubkey_bin=%d",
+                                (int)global_tv_video_active, (int)global_tv_toxid);
+    // ----- TV -----
+
+    // ----- Cam -----
+    send_text_message_to_friend(tox, friend_number, "Cam: active=%d pubkey_bin=%d",
+                                (int)global_cam_video_active, (int)global_cam_toxid);
+    // ----- Cam -----
+
+    // ----- bit rates -----
+    send_text_message_to_friend(tox, friend_number, "Bitrates (kb/s): audio=%d video=%d",
+                                (int)audio_bitrate, (int)video_bitrate);
+    // ----- bit rates -----
 
     // ----- ToxID -----
     char tox_id_hex[TOX_ADDRESS_SIZE * 2 + 1];
@@ -1011,6 +1056,18 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
             }
         }
     }
+    else if (!strncmp(".vbr ", dest_msg, (size_t) 5))
+    {
+        if (strlen(dest_msg) > 7) // require 3 digits
+        {
+            int vbr_new = get_number_in_string(dest_msg, (int)video_bitrate);
+            if ((vbr_new > 300) && (vbr_new < 10000))
+            {
+                video_bitrate = (int32_t)vbr_new;
+                toxav_bit_rate_set(mytox_av, friend_number, audio_bitrate, video_bitrate, NULL);
+            }
+        }
+    }
     else if (strncmp((char *) dest_msg, ".delcam", strlen((char *) ".delcam")) == 0)
     {
         if (global_cam_toxid)
@@ -1061,6 +1118,14 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
         friend_to_take_av_from = global_cam_friendnum;
         global_video_active = 1;
         dbg(9, "friend_to_take_av_from (CAM) = %d [2]", (int) friend_to_take_av_from);
+    }
+    else if (strncmp((char *) dest_msg, ".kac", strlen((char *) ".kac")) == 0)
+    {
+        disconnect_all_calls(tox);
+    }
+    else if (strncmp((char *) dest_msg, ".dmc", strlen((char *) ".dmc")) == 0)
+    {
+        av_local_disconnect(mytox_av, friendnum)
     }
     else if (strncmp((char *) dest_msg, "help", strlen((char *) "help")) == 0)
     {
