@@ -1145,10 +1145,31 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
     else if (strncmp((char *) dest_msg, ".kac", strlen((char *) ".kac")) == 0)
     {
         disconnect_all_calls(tox);
+
+        friend_to_take_av_from = -1;
+        global_video_active = 0;
+
+        if (global_tv_video_active == 1)
+        {
+            // ** // av_local_disconnect(mytox_av, global_tv_friendnum);
+            global_tv_video_active = 0;
+        }
     }
     else if (strncmp((char *) dest_msg, ".dmc", strlen((char *) ".dmc")) == 0)
     {
         av_local_disconnect(mytox_av, friend_number);
+
+        if (friend_number == friend_to_take_av_from)
+        {
+            friend_to_take_av_from = -1;
+            global_video_active = 0;
+
+            if (global_tv_video_active == 1)
+            {
+                // ** // av_local_disconnect(mytox_av, global_tv_friendnum);
+                global_tv_video_active = 0;
+            }
+        }
     }
     else if (strncmp((char *) dest_msg, "help", strlen((char *) "help")) == 0)
     {
