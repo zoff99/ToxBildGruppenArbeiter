@@ -1254,12 +1254,26 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
         dbg(9, "Call with friend %d errored", friend_number);
         if (friend_number == global_tv_friendnum)
         {
+            av_local_disconnect(mytox_av, friendnum);
             global_tv_video_active = 0;
         }
         else if (friend_number == global_cam_friendnum)
         {
+            av_local_disconnect(mytox_av, friendnum);
             global_cam_video_active = 0;
         }
+        else
+        {
+            if (friend_to_take_av_from == friend_number)
+            {
+                friend_to_take_av_from = -1;
+                global_video_active = 0;
+                dbg(9, "friend_to_take_av_from = -1 [7]");
+                dbg(9, "global_video_active = 0 [7]");
+            }
+            av_local_disconnect(mytox_av, friendnum);
+        }
+
         return;
     }
 
@@ -1395,7 +1409,7 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
 
     if (ystride < width || ustride < width / 2 || vstride < width / 2)
     {
-        dbg(9, "wtf");
+        dbg(9, "strange video frame size/stride error");
         return;
     }
 
@@ -1428,13 +1442,13 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                 // send to TV ---------------------------
                 if (global_tv_friendnum != -1)
                 {
-                    dbg(9, "cb___video_receive_frame:global_tv_friendnum=%d",
-                       (int) global_tv_friendnum);
+                    // dbg(9, "cb___video_receive_frame:global_tv_friendnum=%d",
+                    //   (int) global_tv_friendnum);
 
                     if (global_tv_video_active == 1)
                     {
-                        dbg(9, "cb___video_receive_frame:global_tv_video_active=%d",
-                           (int) global_tv_video_active);
+                        //dbg(9, "cb___video_receive_frame:global_tv_video_active=%d",
+                        //   (int) global_tv_video_active);
 
                         toxav_video_send_frame(toxAV,
                                                global_tv_friendnum,
@@ -1446,8 +1460,8 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                                                &err);
                         if (err != TOXAV_ERR_SEND_FRAME_OK)
                         {
-                            dbg(9, "Could not send video frame to TV: %d, error: %d", (int)global_tv_friendnum,
-                               (int)err);
+                            // dbg(9, "Could not send video frame to TV: %d, error: %d", (int)global_tv_friendnum,
+                            //   (int)err);
                             global_tv_video_active = 0;
                         }
                     }
@@ -1462,11 +1476,11 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                 {
                     uint32_t list[size];
                     tox_self_get_friend_list(mytox_global, list);
-                    dbg(9, "cb___video_receive_frame:friend_list_size=%d", (int)size);
+                    // dbg(9, "cb___video_receive_frame:friend_list_size=%d", (int)size);
 
                     for (i = 0; i < size; i++)
                     {
-                        dbg(9, "list[i]=%d", (int)list[i]);
+                        // dbg(9, "list[i]=%d", (int)list[i]);
 
                         if (list[i] != global_cam_friendnum)
                         {
@@ -1480,9 +1494,9 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                                                    &err);
                             if (err != TOXAV_ERR_SEND_FRAME_OK)
                             {
-                                dbg(9, "Could not send video frame to friend: %d, error: %d",
-                                   (int)list[i],
-                                   (int)err);
+                                // dbg(9, "Could not send video frame to friend: %d, error: %d",
+                                //   (int)list[i],
+                                //   (int)err);
                             }
                         }
                     }
@@ -1821,7 +1835,7 @@ void bootstrap(Tox *tox)
 
 void av_local_disconnect(ToxAV *av, uint32_t friendnum)
 {
-    dbg(9, "av_local_disconnect");
+    dbg(9, "av_local_disconnect friendnum=%d", (int)friendnum);
     TOXAV_ERR_CALL_CONTROL error = 0;
     toxav_call_control(av, friendnum, TOXAV_CALL_CONTROL_CANCEL, &error);
 }
