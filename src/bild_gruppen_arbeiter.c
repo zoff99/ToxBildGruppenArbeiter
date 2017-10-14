@@ -1219,7 +1219,9 @@ static void cb___bit_rate_status(ToxAV *av, uint32_t friend_number,
 	}
 	else
 	{
-		video_bitrate = video_bit_rate_;
+		// HINT: don't touch global video bitrate --------
+		// video_bitrate = video_bit_rate_;
+		// HINT: don't touch global video bitrate --------
 	}
 
     dbg(2, "suggested bit rates: audio: %d video: %d\n", audio_bit_rate, video_bit_rate);
