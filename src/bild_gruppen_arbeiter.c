@@ -2101,9 +2101,9 @@ int main(int argc, char *argv[])
     global_tv_toxid = NULL;
     global_tv_friendnum = -1;
     global_tv_video_active = 0;
-    dbg(9, "main:global_tv_toxid[1] %d", (int)global_tv_toxid);
+    dbg(9, "main:global_tv_toxid [1] %d", (int)global_tv_toxid);
     read_tvpubkey_from_file(&global_tv_toxid);
-    dbg(9, "main:global_tv_toxid[2] %d", (int)global_tv_toxid);
+    dbg(9, "main:global_tv_toxid [2] %d", (int)global_tv_toxid);
 
     global_cam_toxid = NULL;
     global_cam_friendnum = -1;
