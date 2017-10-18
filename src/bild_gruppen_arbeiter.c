@@ -1254,7 +1254,7 @@ static void cb___bit_rate_status(ToxAV *av, uint32_t friend_number,
 	}
 
     dbg(2, "suggested bit rates: audio: %d video: %d friend_number=%d\n", audio_bit_rate, video_bit_rate, (int)friend_number);
-    dbg(2, "actual    bit rates: audio: %d video: %d friend_number=%d\n", audio_bitrate, video_bitrate, (int)friend_number);
+    dbg(2, "default   bit rates: audio: %d video: %d friend_number=%d\n", audio_bitrate, video_bitrate, (int)friend_number);
 }
 
 
