@@ -9,9 +9,9 @@ Build Status
 
 Development Snapshot Version (Linux)
 =
-the latest Development Snapshot can be downloaded from CircleCI, [here](https://circleci.com/api/v1/project/zoff99/ToxBildGruppenArbeiter/latest/artifacts/0/$CIRCLE_ARTIFACTS/ubuntu_14_04_binaries/toxcam_static?filter=successful&branch=master)
+the latest Development Snapshot can be downloaded from CircleCI, [here](https://circleci.com/api/v1/project/zoff99/ToxBildGruppenArbeiter/latest/artifacts/0/$CIRCLE_ARTIFACTS/ubuntu_14_04_binaries/bild_gruppen_arbeiter_static?filter=successful&branch=master)
 
 Development Snapshot Version (Raspberry PI)
 =
-the latest Development Snapshot can be downloaded from CircleCI, [here](https://circleci.com/api/v1/project/zoff99/ToxBildGruppenArbeiter/latest/artifacts/0/$CIRCLE_ARTIFACTS/RASPI/toxcam_static?filter=successful&branch=master)
+the latest Development Snapshot can be downloaded from CircleCI, [here](https://circleci.com/api/v1/project/zoff99/ToxBildGruppenArbeiter/latest/artifacts/0/$CIRCLE_ARTIFACTS/RASPI/bild_gruppen_arbeiter_static?filter=successful&branch=master)
 
