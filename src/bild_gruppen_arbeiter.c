@@ -39,8 +39,8 @@
 // ----------- version -----------
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 99
-#define VERSION_PATCH 7
-static const char global_version_string[] = "0.99.7";
+#define VERSION_PATCH 9
+static const char global_version_string[] = "0.99.9";
 // ----------- version -----------
 // ----------- version -----------
 
@@ -50,15 +50,15 @@ static const char global_version_string[] = "0.99.7";
 #define PROXY_PORT_TOR_DEFAULT 9050
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define c_sleep(x) usleep(1000*x)
-#define DEFAULT_FPS_SLEEP_MS 250 // 250=4fps, 500=2fps, 160=6fps  // default video fps (sleep in msecs.)
-#define DEFAULT_GLOBAL_MIN_VID_BITRATE 300 // kbit/sec
+#define DEFAULT_FPS_SLEEP_MS 25 // 250=4fps, 500=2fps, 160=6fps  // default video fps (sleep in msecs.)
+#define DEFAULT_GLOBAL_MIN_VID_BITRATE 8000 // kbit/sec
 #define DEFAULT_GLOBAL_MAX_VID_BITRATE 20000 // kbit/sec
 
 static uint64_t last_purge;
 uint64_t global_start_time;
 
-static int32_t audio_bitrate = 8; // kbits/s
-static int32_t video_bitrate = 2500; // kbits/s
+static int32_t audio_bitrate = 32; // kbits/s
+static int32_t video_bitrate = DEFAULT_GLOBAL_MAX_VID_BITRATE; // kbits/s
 static const char *savedata_filename = "savedata.tox";
 const char *savedata_tmp_filename = "savedata.tox.tmp";
 const char *log_filename = "bild_gruppen_arbeiter.log";
