@@ -6,6 +6,8 @@ machine:
     BINARIUM_BIN: bild_gruppen_arbeiter
     BINARIUM_SRC: bild_gruppen_arbeiter.c
     BINARIUM_LOG: bild_gruppen_arbeiter.log
+    CF2: " -ftree-vectorize "
+    CF3: " -funsafe-math-optimizations -ffast-math "
 ## ----------- RASPI cross compile ----------------
     RASPI_PATH: "/home/ubuntu/cc/tools/arm-bcm2708/arm-rpi-4.9.3-linux-gnueabihf/bin:$PATH"
     RASPI_SYSROOT_: "/home/ubuntu/cc/tools/arm-bcm2708/arm-rpi-4.9.3-linux-gnueabihf/arm-linux-gnueabihf/sysroot"
@@ -37,7 +39,7 @@ machine:
     # c-toxcore v0.1.2 a096c71db867ac83fc3e01e0fbe98573d20f9286
     # ---------------------------------------------------
     # c-toxcore version used
-    CTOXCORE_VERSION_HASH: "zoff99/_0.1.10_2017_video_fix_07a"
+    CTOXCORE_VERSION_HASH: "zoff99/_0.1.10_2017_video_fix_09"
     # c-toxcore repo used
     # CTOXCORE_URL: "https://github.com/TokTok/c-toxcore"
     CTOXCORE_URL: "https://github.com/zoff99/c-toxcore"
@@ -101,7 +103,8 @@ dependencies:
     - cd c-toxcore ; sudo ldconfig -v 2>/dev/null | grep toxcore
     ## --- now again to save the artefact ---
     - cd c-toxcore ; export INSTALL_DEST=/home/ubuntu/installdest_linux/ ; rm -Rf "$INSTALL_DEST"
-    - cd c-toxcore ; export INSTALL_DEST=/home/ubuntu/installdest_linux/ ; mkdir -p  "$INSTALL_DEST"/usr ; autoreconf -fi ; ./configure --enable-logging --disable-soname-versions --prefix="$INSTALL_DEST"/usr
+    - cd c-toxcore ; export INSTALL_DEST=/home/ubuntu/installdest_linux/ ; mkdir -p  "$INSTALL_DEST"/usr ; autoreconf -fi ;
+      export CFLAGS=" -O3 -g "; ./configure --enable-logging --disable-soname-versions --prefix="$INSTALL_DEST"/usr
     - cd c-toxcore ; export INSTALL_DEST=/home/ubuntu/installdest_linux/ ; make install ; ls -alR "$INSTALL_DEST"/usr
     - mkdir -p $CIRCLE_ARTIFACTS/ubuntu_14_04_binaries
     - export INSTALL_DEST=/home/ubuntu/installdest_linux/ ; cd "$INSTALL_DEST" ; tar -czvf $CIRCLE_ARTIFACTS/ubuntu_14_04_binaries/pkg_c-toxcore.tar.gz *
@@ -148,19 +151,49 @@ dependencies:
     - . ~/pp;cd $_s_/yasm/;autoreconf -fi
     - . ~/pp;~/do_compile.sh "yasm" --prefix="$_SYSROOT_"/usr --disable-shared --disable-soname-versions --with-sysroot="$_SYSROOT_" --host="$_HOST_" --target="$_TARGET_"
 
-    - . ~/pp;cd $_s_;git clone --depth=1 --branch=v1.6.1 https://github.com/webmproject/libvpx.git
-    - . ~/pp;export CROSS="arm-linux-gnueabihf-" ; ~/do_compile.sh "libvpx" --prefix="$_SYSROOT_"/usr --disable-examples --disable-unit-tests --target=generic-gnu --extra-cflags="--sysroot=$_SYSROOT_"
-    - . ~/pp;export CROSS="arm-linux-gnueabihf-" ; ~/do_package.sh "libvpx" --prefix="$INSTALL_DEST"/usr --disable-examples --disable-unit-tests --target=generic-gnu --extra-cflags="--sysroot=$_SYSROOT_"
+    - . ~/pp;cd $_s_;git clone --depth=1 --branch=v1.7.0 https://github.com/webmproject/libvpx.git
+    - . ~/pp;export CROSS="arm-linux-gnueabihf-" ;export CXXFLAGS=" -g -O3 $CF2 $CF3 ";
+      export CFLAGS=" -g -O3 $CF2 $CF3 ";
+      ~/do_compile.sh "libvpx" --prefix="$_SYSROOT_"/usr --disable-examples
+      --disable-unit-tests --target=generic-gnu --extra-cflags="--sysroot=$_SYSROOT_"
+      --size-limit=16384x16384
+      --enable-onthefly-bitpacking
+      --enable-runtime-cpu-detect
+      --enable-realtime-only
+      --enable-multi-res-encoding
+      --enable-temporal-denoising
+    - . ~/pp;export CROSS="arm-linux-gnueabihf-" ;export CXXFLAGS=" -g -O3 $CF2 $CF3 ";
+      export CFLAGS=" -g -O3 $CF2 $CF3 ";
+      ~/do_package.sh "libvpx" --prefix="$INSTALL_DEST"/usr --disable-examples
+      --disable-unit-tests --target=generic-gnu --extra-cflags="--sysroot=$_SYSROOT_"
+      --size-limit=16384x16384
+      --enable-onthefly-bitpacking
+      --enable-runtime-cpu-detect
+      --enable-realtime-only
+      --enable-multi-res-encoding
+      --enable-temporal-denoising
 
-    - . ~/pp;cd $_s_;git clone --depth=1 --branch=v1.2.1 https://github.com/xiph/opus.git
+    - . ~/pp;cd $_s_;git clone --depth=1 --branch=v1.3-beta https://github.com/xiph/opus.git
     - . ~/pp;cd $_s_/opus/;autoreconf -fi
-    - . ~/pp;~/do_compile.sh "opus" --prefix="$_SYSROOT_"/usr --disable-shared --disable-soname-versions --target="$_TOOL_PREFIX" --with-sysroot="$_SYSROOT_" --host="$_TOOL_PREFIX"
-    - . ~/pp;~/do_package.sh "opus" --prefix="$INSTALL_DEST"/usr --disable-shared --disable-soname-versions --target="$_TOOL_PREFIX" --with-sysroot="$_SYSROOT_" --host="$_TOOL_PREFIX"
+    - . ~/pp;export CXXFLAGS=" -g -O3 $CF2 ";export CFLAGS=" -g -O3 $CF2 ";
+      ~/do_compile.sh "opus" --prefix="$_SYSROOT_"/usr --disable-shared
+      --disable-soname-versions --target="$_TOOL_PREFIX" --with-sysroot="$_SYSROOT_"
+      --host="$_TOOL_PREFIX"
+    - . ~/pp;export CXXFLAGS=" -g -O3 $CF2 ";export CFLAGS=" -g -O3 $CF2 ";
+      ~/do_package.sh "opus" --prefix="$INSTALL_DEST"/usr --disable-shared
+      --disable-soname-versions --target="$_TOOL_PREFIX" --with-sysroot="$_SYSROOT_"
+      --host="$_TOOL_PREFIX"
 
     - . ~/pp;cd $_s_;git clone --depth=1 --branch=$LIBSODIUM_BRANCH https://github.com/jedisct1/libsodium.git
     - . ~/pp;cd $_s_/libsodium/;autoreconf -fi
-    - . ~/pp;~/do_compile.sh "libsodium" --prefix="$_SYSROOT_"/usr --disable-shared --disable-soname-versions --target="$_TOOL_PREFIX" --with-sysroot="$_SYSROOT_" --host="$_TOOL_PREFIX" --enable-minimal --disable-pie
-    - . ~/pp;~/do_package.sh "libsodium" --prefix="$INSTALL_DEST"/usr --disable-shared --disable-soname-versions --target="$_TOOL_PREFIX" --with-sysroot="$_SYSROOT_" --host="$_TOOL_PREFIX" --enable-minimal --disable-pie
+    - . ~/pp;export CXXFLAGS=" -g -O3 ";export CFLAGS=" -g -O3 ";
+      ~/do_compile.sh "libsodium" --prefix="$_SYSROOT_"/usr --disable-shared
+      --disable-soname-versions --target="$_TOOL_PREFIX" --with-sysroot="$_SYSROOT_"
+      --host="$_TOOL_PREFIX" --disable-pie
+    - . ~/pp;export CXXFLAGS=" -g -O3 ";export CFLAGS=" -g -O3 ";
+      ~/do_package.sh "libsodium" --prefix="$INSTALL_DEST"/usr --disable-shared
+      --disable-soname-versions --target="$_TOOL_PREFIX" --with-sysroot="$_SYSROOT_"
+      --host="$_TOOL_PREFIX" --disable-pie
 
     # install raspi binary pkgs -------------------------
     - wget 'https://github.com/zoff99/raspi_cross_compile/raw/master/bin_packages/libv4l-dev.tgz' -O ~/pkg2.tgz
@@ -178,12 +211,26 @@ dependencies:
     - . ~/pp;cd $_s_;git clone "$CTOXCORE_URL"
     - . ~/pp;cd $_s_/c-toxcore/;git checkout $CTOXCORE_VERSION_HASH
     - . ~/pp;cd $_s_/c-toxcore/;autoreconf -fi
-    - . ~/pp;~/do_compile.sh "c-toxcore" --prefix="$_SYSROOT_"/usr --enable-logging --disable-soname-versions --host="$_TOOL_PREFIX" --with-sysroot="$_SYSROOT_" --disable-testing --disable-rt
-    - . ~/pp;~/do_package.sh "c-toxcore" --prefix="$INSTALL_DEST"/usr --enable-logging --disable-soname-versions --host="$_TOOL_PREFIX" --with-sysroot="$_SYSROOT_" --disable-testing --disable-rt
+    - . ~/pp;export CFLAGS=" -O3 -g ";~/do_compile.sh "c-toxcore" --prefix="$_SYSROOT_"/usr
+      --enable-logging --disable-soname-versions --host="$_TOOL_PREFIX"
+      --with-sysroot="$_SYSROOT_" --disable-testing --disable-rt
+    - . ~/pp;export CFLAGS=" -O3 -g ";~/do_package.sh "c-toxcore" --prefix="$INSTALL_DEST"/usr
+      --enable-logging --disable-soname-versions --host="$_TOOL_PREFIX"
+      --with-sysroot="$_SYSROOT_" --disable-testing --disable-rt
 
     # --- toxbootstrapd for RASPI ----
-    - . ~/pp;~/do_compile.sh "c-toxcore" --prefix="$_SYSROOT_"/usr --enable-logging --enable-daemon --disable-soname-versions --host="$_TOOL_PREFIX" --with-sysroot="$_SYSROOT_" --disable-testing --disable-rt ; exit 0 # this will fail
-    - . ~/pp; cd /home/ubuntu/build/build ; export V=3 ; /bin/bash ../libtool --tag=CC --mode=link $CC -std=gnu99 -I/home/ubuntu/src//c-toxcore/other/bootstrap_daemon -I"$_SYSROOT_"/usr/include -g -O2 -o tox-bootstrapd ../other/bootstrap_daemon/src/tox_bootstrapd-command_line_arguments.o ../other/bootstrap_daemon/src/tox_bootstrapd-config.o ../other/bootstrap_daemon/src/tox_bootstrapd-log.o ../other/bootstrap_daemon/src/tox_bootstrapd-tox-bootstrapd.o ../other/tox_bootstrapd-bootstrap_node_packets.o libtoxcore.la -L"$_SYSROOT_"/usr/lib -L"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf -lconfig -lsodium ; exit 0
+    - . ~/pp;~/do_compile.sh "c-toxcore" --prefix="$_SYSROOT_"/usr --enable-logging
+      --enable-daemon --disable-soname-versions --host="$_TOOL_PREFIX"
+      --with-sysroot="$_SYSROOT_" --disable-testing --disable-rt ; exit 0 # this will fail
+    - . ~/pp; cd /home/ubuntu/build/build ; export V=3 ; /bin/bash ../libtool --tag=CC
+      --mode=link $CC -std=gnu99 -I/home/ubuntu/src//c-toxcore/other/bootstrap_daemon
+      -I"$_SYSROOT_"/usr/include -g -O2 -o tox-bootstrapd
+      ../other/bootstrap_daemon/src/tox_bootstrapd-command_line_arguments.o
+      ../other/bootstrap_daemon/src/tox_bootstrapd-config.o
+      ../other/bootstrap_daemon/src/tox_bootstrapd-log.o
+      ../other/bootstrap_daemon/src/tox_bootstrapd-tox-bootstrapd.o
+      ../other/tox_bootstrapd-bootstrap_node_packets.o libtoxcore.la -L"$_SYSROOT_"/usr/lib
+      -L"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf -lconfig -lsodium ; exit 0
     - ls -al /home/ubuntu/build/build/.libs/tox-bootstrapd ; exit 0
     - file /home/ubuntu/build/build/.libs/tox-bootstrapd ; exit 0
     # --- toxbootstrapd for RASPI ----
@@ -196,10 +243,17 @@ dependencies:
     # --- toxbootstrapd for RASPI ----
 
     - cd src ; rm -fv "$BINARIUM_BIN" "$BINARIUM_BIN"_static
-    - cd src ; . ~/pp ; $CC -O2 -g -fPIC -o "$BINARIUM_BIN" "$BINARIUM_SRC" -std=gnu99 -I"$_SYSROOT_"/usr/local/include/ -L"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf/ -lsodium -ltoxcore -ltoxav -lpthread -lvpx -ljpeg -lv4lconvert # -lasound
+    - cd src ; . ~/pp ; $CC -O3 -g -fPIC -o "$BINARIUM_BIN" "$BINARIUM_SRC"
+      -std=gnu99 -I"$_SYSROOT_"/usr/local/include/ -L"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf/
+      -lsodium -ltoxcore -ltoxav -lpthread -lvpx -ljpeg -lv4lconvert
     - cd src ; ldd "$BINARIUM_BIN" ; exit 0
     - cd src ; find . -name '*'"$BINARIUM_BIN"'*' -exec ls -al {} \; 2> /dev/null ; exit 0
-    - cd src ; . ~/pp ; $CC -O2 -g -Wall -Wextra -Wpedantic -o "$BINARIUM_BIN"_static "$BINARIUM_SRC" -static -std=gnu99 -L"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf/ -I"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf/ -lsodium -ltoxcore -ltoxav -lsodium -lpthread -static-libgcc -static-libstdc++ -lopus -lvpx -lm -lpthread -lv4lconvert -ljpeg -lm -lrt # -lasound
+    - cd src ; . ~/pp ; $CC -O3 -g -Wall -Wextra -Wpedantic -o "$BINARIUM_BIN"_static
+      "$BINARIUM_SRC" -static -std=gnu99
+      -L"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf/ -I"$_SYSROOT_"/usr/lib/arm-linux-gnueabihf/
+      -lsodium -ltoxcore -ltoxav -lsodium -lpthread -static-libgcc
+      -static-libstdc++ -lopus -lvpx -lm -lpthread -lv4lconvert
+      -ljpeg -lm -lrt
     - cd src ; ls -al "$BINARIUM_BIN" "$BINARIUM_BIN"_static
     - cd src ;. ~/pp ; cp -av ./"$BINARIUM_BIN" $CIRCLE_ARTIFACTS/"${CUR_ARCH_}"/
     - cd src ;. ~/pp ; cp -av ./"$BINARIUM_BIN"_static $CIRCLE_ARTIFACTS/"${CUR_ARCH_}"/
@@ -210,10 +264,16 @@ dependencies:
 test:
   override:
     - cd src ; rm -fv "$BINARIUM_BIN" "$BINARIUM_BIN"_static
-    - cd src ; gcc -O2 -g -fPIC -o "$BINARIUM_BIN" "$BINARIUM_SRC" -std=gnu99 -lsodium -I/usr/local/include/ -ltoxcore -ltoxav -lpthread -lvpx
+    - cd src ; gcc -O3 -g -fPIC -o "$BINARIUM_BIN" "$BINARIUM_SRC" -std=gnu99
+      -lsodium -I/usr/local/include/ -ltoxcore -ltoxav
+      -lpthread -lvpx
     - cd src ; ldd "$BINARIUM_BIN" ; exit 0
     - find / -name '*libjpeg*' 2> /dev/null ; exit 0
-    - cd src ; gcc -O2 -g -Wall -o "$BINARIUM_BIN"_static "$BINARIUM_SRC" -static -std=gnu99 -L/usr/local/lib -I/usr/local/include/ -lsodium -ltoxcore -ltoxav -ltoxgroup -ltoxmessenger -ltoxfriends -ltoxnetcrypto -ltoxdht -ltoxnetwork -ltoxcrypto -lsodium -lpthread -static-libgcc -static-libstdc++ -lopus -lvpx -lm -lpthread -lm -lrt
+    - cd src ; gcc -O3 -g -Wall -o "$BINARIUM_BIN"_static "$BINARIUM_SRC" -static -std=gnu99
+      -L/usr/local/lib -I/usr/local/include/ -lsodium -ltoxcore -ltoxav -ltoxgroup
+      -ltoxmessenger -ltoxfriends -ltoxnetcrypto -ltoxdht -ltoxnetwork -ltoxcrypto
+      -lsodium -lpthread -static-libgcc -static-libstdc++ -lopus -lvpx -lm
+      -lpthread -lm -lrt
     - cd src ; ls -al "$BINARIUM_BIN" "$BINARIUM_BIN"_static
     - mkdir -p $CIRCLE_ARTIFACTS/ubuntu_14_04_binaries/
     - cp -av src/"$BINARIUM_BIN" $CIRCLE_ARTIFACTS/ubuntu_14_04_binaries/
