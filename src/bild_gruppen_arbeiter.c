@@ -480,7 +480,7 @@ void start_av_call_to_tv(Tox *tox, uint32_t friendnum)
     if (is_friend_online(tox, friendnum) == 1)
     {
         // send_text_message_to_friend(tox, friendnum, "i am trying to send my video ...");
-        dbg(9, "start_av_call_to_tv ... %d", (int)friendnum);
+        // dbg(9, "start_av_call_to_tv ... %d", (int)friendnum);
 
         if (mytox_av != NULL)
         {
@@ -509,6 +509,8 @@ void start_av_call_to_tv(Tox *tox, uint32_t friendnum)
 
                     case TOXAV_ERR_CALL_FRIEND_ALREADY_IN_CALL:
                         dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_ALREADY_IN_CALL");
+                        // TODO: maybe end call and call again? sometimes the status is not 100% correct
+                        global_tv_video_active = 1;
                         break;
 
                     case TOXAV_ERR_CALL_INVALID_BIT_RATE:
@@ -1902,7 +1904,7 @@ void cb___friend_connection_status(Tox *tox, uint32_t friendnum, TOX_CONNECTION 
     // if (is_friend_online(tox, friendnum) == 1)
     if (connection_status != TOX_CONNECTION_NONE)
     {
-        dbg(0, "friend %d just got online", friendnum);
+        // dbg(0, "friend %d just got online", friendnum);
 
         if (global_tv_friendnum == friendnum)
         {
@@ -1944,15 +1946,15 @@ void cb___friend_connection_status(Tox *tox, uint32_t friendnum, TOX_CONNECTION 
 
     if (connection_status == TOX_CONNECTION_TCP)
     {
-        dbg(2, "cb___friend_connection_status:*READY*:friendnum=%d %d (TCP)",
-            (int) friendnum,
-            (int) connection_status);
+        // dbg(2, "cb___friend_connection_status:*READY*:friendnum=%d %d (TCP)",
+        //    (int) friendnum,
+        //    (int) connection_status);
     }
     else
     {
-        dbg(2, "cb___friend_connection_status:*READY*:friendnum=%d %d (UDP)",
-            (int) friendnum,
-            (int) connection_status);
+        //dbg(2, "cb___friend_connection_status:*READY*:friendnum=%d %d (UDP)",
+        //    (int) friendnum,
+        //    (int) connection_status);
     }
 }
 
