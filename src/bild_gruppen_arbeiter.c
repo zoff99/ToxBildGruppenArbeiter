@@ -80,6 +80,7 @@ int global_want_restart = 0;
 TOX_CONNECTION my_connection_status = TOX_CONNECTION_NONE;
 int global_video_active = 0;
 int64_t friend_to_take_av_from = -1;
+int32_t global_encoder_rc_max_quantizer = 62;
 
 const char *tv_pubkey_filename = "tv_pubkey.txt";
 uint8_t *global_tv_toxid = NULL;
@@ -537,6 +538,13 @@ void start_av_call_to_tv(Tox *tox, uint32_t friendnum)
                     global_tv_video_active = 1;
                     // send_text_message_to_friend(tox, friendnum, "starting call to TV");
                     dbg(9, "starting call to TV");
+                    // change some settings here -------
+                    TOXAV_ERR_OPTION_SET error;
+                    toxav_option_set(mytox_av, friendnum, TOXAV_ENCODER_RC_MAX_QUANTIZER,
+                                     global_encoder_rc_max_quantizer , &error);
+                    dbg(9, "TOXAV_ENCODER_RC_MAX_QUANTIZER(2) value=%d res=%d\n", (int)global_encoder_rc_max_quantizer,
+                        (int)error);
+                    // change some settings here -------
                 }
             }
             else
@@ -933,6 +941,7 @@ void send_help_to_friend(Tox *tox, uint32_t friend_number)
     send_text_message_to_friend(tox, friend_number, " .locksp        --> Lock current Speaker");
     send_text_message_to_friend(tox, friend_number, " .unlocksp      --> Unlock Speaker");
     send_text_message_to_friend(tox, friend_number, " .vbr <number>  --> Set <number> as video bitrate");
+    send_text_message_to_friend(tox, friend_number, " .mqt <number>  --> Set <number> as max quantizer");
     send_text_message_to_friend(tox, friend_number, " .kac           --> Kill all calls");
     send_text_message_to_friend(tox, friend_number, " .dmc           --> Disconnect my calls");
 }
@@ -990,6 +999,10 @@ void cmd_stats(Tox *tox, uint32_t friend_number)
     send_text_message_to_friend(tox, friend_number, "Bitrates (kb/s): audio=%d video=%d",
                                 (int)audio_bitrate, (int)video_bitrate);
     // ----- bit rates -----
+    // ----- rc_max_quantizer -----
+    send_text_message_to_friend(tox, friend_number, "rc_max_quantizer: value=%d",
+                                (int)global_encoder_rc_max_quantizer);
+    // ----- rc_max_quantizer -----
     // ----- ToxID -----
     char tox_id_hex[TOX_ADDRESS_SIZE * 2 + 1];
     get_my_toxid(tox, tox_id_hex);
@@ -1098,6 +1111,19 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
             {
                 video_bitrate = (int32_t)vbr_new;
                 toxav_bit_rate_set(mytox_av, friend_number, audio_bitrate, video_bitrate, NULL);
+            }
+        }
+    }
+    else if (!strncmp(".mqt ", dest_msg, (size_t) 5))
+    {
+        if (strlen(dest_msg) > 5) // require 1 digits
+        {
+            int value_new = get_number_in_string(dest_msg, (int)global_encoder_rc_max_quantizer);
+
+            if ((value_new >= 1) && (value_new <= 65))
+            {
+                global_encoder_rc_max_quantizer = (int32_t)value_new;
+                // TODO: loop through all outgoing video calls and actually activate the new value!
             }
         }
     }
@@ -1230,6 +1256,14 @@ void cb___call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool vi
             dbg(9, "cb___call:friend_to_take_av_from = %d [7]", (int) friend_to_take_av_from);
             dbg(9, "cb___call:global_video_active = 1 [7]");
         }
+
+        // change some settings here -------
+        TOXAV_ERR_OPTION_SET error;
+        toxav_option_set(toxAV, friend_number, TOXAV_ENCODER_RC_MAX_QUANTIZER,
+                         global_encoder_rc_max_quantizer , &error);
+        dbg(9, "TOXAV_ENCODER_RC_MAX_QUANTIZER(1) value=%d res=%d\n", (int)global_encoder_rc_max_quantizer,
+            (int)error);
+        // change some settings here -------
     }
 }
 
