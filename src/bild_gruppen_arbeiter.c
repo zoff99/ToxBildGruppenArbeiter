@@ -39,8 +39,8 @@
 // ----------- version -----------
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 99
-#define VERSION_PATCH 9
-static const char global_version_string[] = "0.99.9";
+#define VERSION_PATCH 10
+static const char global_version_string[] = "0.99.10";
 // ----------- version -----------
 // ----------- version -----------
 
@@ -53,7 +53,7 @@ static const char global_version_string[] = "0.99.9";
 #define DEFAULT_FPS_SLEEP_MS 160 // 250=4fps, 500=2fps, 160=6fps  // default video fps (sleep in msecs.)
 #define DEFAULT_GLOBAL_MIN_VID_BITRATE 200 // kbit/sec
 #define DEFAULT_GLOBAL_MAX_VID_BITRATE 20000 // kbit/sec
-#define DEFAULT_GLOBAL_NORMAL_VID_BITRATE 500
+#define DEFAULT_GLOBAL_NORMAL_VID_BITRATE 5000
 
 static uint64_t last_purge;
 uint64_t global_start_time;
