@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Zoff <zoff@zoff.cc>
  * in 2017
  *
@@ -149,6 +149,7 @@ void dbg(int level, const char *fmt, ...)
     fmt_copy = level_and_format + 2;
     strcpy(fmt_copy, fmt);
     level_and_format[1] = ':';
+
     if (level == 0)
     {
         level_and_format[0] = 'E';
@@ -168,10 +169,8 @@ void dbg(int level, const char *fmt, ...)
 
     level_and_format[(strlen(fmt) + 2)] = '\n';
     level_and_format[(strlen(fmt) + 3)] = '\0';
-
     time_t t3 = time(NULL);
     struct tm tm3 = *localtime(&t3);
-
     char *level_and_format_2 = malloc(strlen(level_and_format) + 5 + 3 + 3 + 1 + 3 + 3 + 3 + 1);
     level_and_format_2[0] = '\0';
     snprintf(level_and_format_2, (strlen(level_and_format) + 5 + 3 + 3 + 1 + 3 + 3 + 3 + 1),
@@ -198,6 +197,7 @@ void dbg(int level, const char *fmt, ...)
     {
         free(level_and_format_2);
     }
+
     // fprintf(stderr, "free:002\n");
 }
 
@@ -216,7 +216,10 @@ int get_number_in_string(const char *str, int default_value)
 {
     int number;
 
-    while (!(*str >= '0' && *str <= '9') && (*str != '-') && (*str != '+')) str++;
+    while (!(*str >= '0' && *str <= '9') && (*str != '-') && (*str != '+'))
+    {
+        str++;
+    }
 
     if (sscanf(str, "%d", &number) == 1)
     {
@@ -224,7 +227,7 @@ int get_number_in_string(const char *str, int default_value)
     }
 
     // no int found, return default value
-    return default_value; 
+    return default_value;
 }
 
 /* ssssshhh I stole this from ToxBot, don't tell anyone.. */
@@ -234,7 +237,6 @@ static void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs)
     long unsigned int minutes = (secs % 3600) / 60;
     long unsigned int hours = (secs / 3600) % 24;
     long unsigned int days = (secs / 3600) / 24;
-
     snprintf(buf, bufsize, "%lud %luh %lum", days, hours, minutes);
 }
 
@@ -242,10 +244,8 @@ void bin_to_hex_string(uint8_t *tox_id_bin, size_t tox_id_bin_len, char *toxid_s
 {
     char tox_id_hex_local[TOX_ADDRESS_SIZE * 2 + 1];
     CLEAR(tox_id_hex_local);
-
     // dbg(9, "bin_to_hex_string:sizeof(tox_id_hex_local)=%d\n", (int)sizeof(tox_id_hex_local));
     // dbg(9, "bin_to_hex_string:strlen(tox_id_bin)=%d\n", (int)tox_id_bin_len);
-
     sodium_bin2hex(tox_id_hex_local, sizeof(tox_id_hex_local), tox_id_bin, tox_id_bin_len);
 
     for (size_t i = 0; i < sizeof(tox_id_hex_local) - 1; i++)
@@ -254,18 +254,27 @@ void bin_to_hex_string(uint8_t *tox_id_bin, size_t tox_id_bin_len, char *toxid_s
         tox_id_hex_local[i] = toupper(tox_id_hex_local[i]);
     }
 
-    snprintf(toxid_str, (size_t) (TOX_ADDRESS_SIZE * 2 + 1), "%s", (const char *) tox_id_hex_local);
+    snprintf(toxid_str, (size_t)(TOX_ADDRESS_SIZE * 2 + 1), "%s", (const char *) tox_id_hex_local);
 }
 
 
 unsigned int char_to_int(char c)
 {
     if (c >= '0' && c <= '9')
-    { return c - '0'; }
+    {
+        return c - '0';
+    }
+
     if (c >= 'A' && c <= 'F')
-    { return 10 + c - 'A'; }
+    {
+        return 10 + c - 'A';
+    }
+
     if (c >= 'a' && c <= 'f')
-    { return 10 + c - 'a'; }
+    {
+        return 10 + c - 'a';
+    }
+
     return -1;
 }
 
@@ -305,7 +314,6 @@ void send_text_message_to_friend(Tox *tox, uint32_t friend_number, const char *f
     va_start(ap, fmt);
     vsnprintf(msg2, 999, fmt, ap);
     va_end(ap);
-
     length = (size_t) strlen(msg2);
     tox_friend_send_message(tox,
                             friend_number,
@@ -403,12 +411,15 @@ int is_friend_online(Tox *tox, uint32_t friendnum)
         case TOX_CONNECTION_NONE:
             return 0;
             break;
+
         case TOX_CONNECTION_TCP:
             return 1;
             break;
+
         case TOX_CONNECTION_UDP:
             return 1;
             break;
+
         default:
             return 0;
             break;
@@ -475,67 +486,66 @@ void start_av_call_to_cam(Tox *tox, uint32_t friendnum)
 
 void start_av_call_to_tv(Tox *tox, uint32_t friendnum)
 {
-   if (global_tv_video_active == 0)
-   {
-    if (is_friend_online(tox, friendnum) == 1)
+    if (global_tv_video_active == 0)
     {
-        // send_text_message_to_friend(tox, friendnum, "i am trying to send my video ...");
-        // dbg(9, "start_av_call_to_tv ... %d", (int)friendnum);
-
-        if (mytox_av != NULL)
+        if (is_friend_online(tox, friendnum) == 1)
         {
-            TOXAV_ERR_CALL error = 0;
-            toxav_call(mytox_av, friendnum, audio_bitrate, video_bitrate, &error);
-
-            if (error != TOXAV_ERR_CALL_OK)
+            // send_text_message_to_friend(tox, friendnum, "i am trying to send my video ...");
+            // dbg(9, "start_av_call_to_tv ... %d", (int)friendnum);
+            if (mytox_av != NULL)
             {
-                switch (error)
+                TOXAV_ERR_CALL error = 0;
+                toxav_call(mytox_av, friendnum, audio_bitrate, video_bitrate, &error);
+
+                if (error != TOXAV_ERR_CALL_OK)
                 {
-                    case TOXAV_ERR_CALL_MALLOC:
-                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_MALLOC");
-                        break;
+                    switch (error)
+                    {
+                        case TOXAV_ERR_CALL_MALLOC:
+                            dbg(0, "toxav_call (1):TOXAV_ERR_CALL_MALLOC");
+                            break;
 
-                    case TOXAV_ERR_CALL_SYNC:
-                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_SYNC");
-                        break;
+                        case TOXAV_ERR_CALL_SYNC:
+                            dbg(0, "toxav_call (1):TOXAV_ERR_CALL_SYNC");
+                            break;
 
-                    case TOXAV_ERR_CALL_FRIEND_NOT_FOUND:
-                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_NOT_FOUND");
-                        break;
+                        case TOXAV_ERR_CALL_FRIEND_NOT_FOUND:
+                            dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_NOT_FOUND");
+                            break;
 
-                    case TOXAV_ERR_CALL_FRIEND_NOT_CONNECTED:
-                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_NOT_CONNECTED");
-                        break;
+                        case TOXAV_ERR_CALL_FRIEND_NOT_CONNECTED:
+                            dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_NOT_CONNECTED");
+                            break;
 
-                    case TOXAV_ERR_CALL_FRIEND_ALREADY_IN_CALL:
-                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_ALREADY_IN_CALL");
-                        // TODO: maybe end call and call again? sometimes the status is not 100% correct
-                        global_tv_video_active = 1;
-                        break;
+                        case TOXAV_ERR_CALL_FRIEND_ALREADY_IN_CALL:
+                            dbg(0, "toxav_call (1):TOXAV_ERR_CALL_FRIEND_ALREADY_IN_CALL");
+                            // TODO: maybe end call and call again? sometimes the status is not 100% correct
+                            global_tv_video_active = 1;
+                            break;
 
-                    case TOXAV_ERR_CALL_INVALID_BIT_RATE:
-                        dbg(0, "toxav_call (1):TOXAV_ERR_CALL_INVALID_BIT_RATE");
-                        break;
+                        case TOXAV_ERR_CALL_INVALID_BIT_RATE:
+                            dbg(0, "toxav_call (1):TOXAV_ERR_CALL_INVALID_BIT_RATE");
+                            break;
 
-                    default:
-                        dbg(0, "toxav_call (1):*unknown error*");
-                        break;
+                        default:
+                            dbg(0, "toxav_call (1):*unknown error*");
+                            break;
+                    }
+                }
+                else
+                {
+                    global_tv_video_active = 1;
+                    // send_text_message_to_friend(tox, friendnum, "starting call to TV");
+                    dbg(9, "starting call to TV");
                 }
             }
             else
             {
-                global_tv_video_active = 1;
-                // send_text_message_to_friend(tox, friendnum, "starting call to TV");
-                dbg(9, "starting call to TV");
+                // send_text_message_to_friend(tox, friendnum, "sending video failed:toxav==NULL");
+                dbg(9, "sending video failed:toxav==NULL");
             }
         }
-        else
-        {
-            // send_text_message_to_friend(tox, friendnum, "sending video failed:toxav==NULL");
-            dbg(9, "sending video failed:toxav==NULL");
-        }
     }
-   }
 }
 
 void invite_cam_as_friend(Tox *tox, uint8_t *tox_id_cam_bin)
@@ -547,6 +557,7 @@ void invite_cam_as_friend(Tox *tox, uint8_t *tox_id_cam_bin)
     }
 
     int64_t fnum_cam = friend_number_for_cam(tox, tox_id_cam_bin);
+
     if (fnum_cam == -1)
     {
         dbg(9, "Cam not on friendlist, inviting ...");
@@ -579,7 +590,6 @@ void invite_cam_as_friend(Tox *tox, uint8_t *tox_id_cam_bin)
     }
 
     update_savedata_file(tox);
-
 }
 
 
@@ -592,6 +602,7 @@ void invite_tv_as_friend(Tox *tox, uint8_t *tox_id_tv_bin)
     }
 
     int64_t fnum_tv = friend_number_for_tv(tox, tox_id_tv_bin);
+
     if (fnum_tv == -1)
     {
         dbg(9, "TV not on friendlist, inviting ...");
@@ -624,7 +635,6 @@ void invite_tv_as_friend(Tox *tox, uint8_t *tox_id_tv_bin)
     }
 
     update_savedata_file(tox);
-
 }
 
 
@@ -701,8 +711,8 @@ void read_campubkey_from_file(uint8_t **cam_pubkey)
 {
     create_cam_file_if_not_exists();
     *cam_pubkey = NULL;
-
     FILE *fp = fopen(cam_pubkey_filename, "r");
+
     if (fp == NULL)
     {
         dbg(1, "Warning: failed to read tv_pubkey_filename file");
@@ -711,9 +721,11 @@ void read_campubkey_from_file(uint8_t **cam_pubkey)
 
     char id[256];
     int len;
+
     while (fgets(id, sizeof(id), fp))
     {
         len = strlen(id);
+
         if (len < (TOX_ADDRESS_SIZE * 2))
         {
             continue;
@@ -731,8 +743,8 @@ void read_tvpubkey_from_file(uint8_t **tv_pubkey)
 {
     create_tv_file_if_not_exists();
     *tv_pubkey = NULL;
-
     FILE *fp = fopen(tv_pubkey_filename, "r");
+
     if (fp == NULL)
     {
         dbg(1, "Warning: failed to read tv_pubkey_filename file");
@@ -741,9 +753,11 @@ void read_tvpubkey_from_file(uint8_t **tv_pubkey)
 
     char id[256];
     int len;
+
     while (fgets(id, sizeof(id), fp))
     {
         len = strlen(id);
+
         if (len < (TOX_ADDRESS_SIZE * 2))
         {
             continue;
@@ -765,8 +779,8 @@ void write_campubkey_to_file(uint8_t *cam_pubkey)
     else
     {
         create_cam_file_if_not_exists();
-
         FILE *fp = fopen(cam_pubkey_filename, "wb");
+
         if (fp == NULL)
         {
             dbg(1, "Warning: failed to read cam_pubkey_filename file");
@@ -776,7 +790,6 @@ void write_campubkey_to_file(uint8_t *cam_pubkey)
         char cam_pubkey_string[TOX_ADDRESS_SIZE * 2 + 1];
         CLEAR(cam_pubkey_string);
         bin_to_hex_string(cam_pubkey, (size_t) TOX_ADDRESS_SIZE, cam_pubkey_string);
-
         int result = fputs(cam_pubkey_string, fp);
         fclose(fp);
     }
@@ -792,8 +805,8 @@ void write_tvpubkey_to_file(uint8_t *tv_pubkey)
     else
     {
         create_tv_file_if_not_exists();
-
         FILE *fp = fopen(tv_pubkey_filename, "wb");
+
         if (fp == NULL)
         {
             dbg(1, "Warning: failed to read tv_pubkey_filename file");
@@ -805,7 +818,6 @@ void write_tvpubkey_to_file(uint8_t *tv_pubkey)
         CLEAR(tv_pubkey_string);
         bin_to_hex_string(tv_pubkey, (size_t) TOX_ADDRESS_SIZE, tv_pubkey_string);
         // dbg(9, "tv_pubkey_string(0)=%s\n", tv_pubkey_string);
-
         int result = fputs(tv_pubkey_string, fp);
         fclose(fp);
     }
@@ -823,8 +835,8 @@ void friend_cleanup(Tox *tox)
 
     uint32_t friends[friend_count];
     tox_self_get_friend_list(tox, friends);
-
     uint64_t curr_time = time(NULL);
+
     for (uint32_t i = 0; i < friend_count; i++)
     {
         TOX_ERR_FRIEND_GET_LAST_ONLINE err;
@@ -851,7 +863,6 @@ uint32_t get_online_friend_count(Tox *tox)
     uint32_t online_friend_count = 0u;
     uint32_t friend_count = tox_self_get_friend_list_size(tox);
     uint32_t friends[friend_count];
-
     tox_self_get_friend_list(tox, friends);
 
     for (uint32_t i = 0; i < friend_count; i++)
@@ -874,11 +885,13 @@ void cb___self_connection_status(Tox *tox, TOX_CONNECTION connection_status, voi
             my_connection_status = TOX_CONNECTION_NONE;
             my_last_offline_timestamp = get_unix_time();
             break;
+
         case TOX_CONNECTION_TCP:
             dbg(2, "Online, using TCP");
             my_connection_status = TOX_CONNECTION_TCP;
             my_last_online_timestamp = get_unix_time();
             break;
+
         case TOX_CONNECTION_UDP:
             dbg(2, "Online, using UDP");
             my_connection_status = TOX_CONNECTION_UDP;
@@ -910,7 +923,6 @@ void send_help_to_friend(Tox *tox, uint32_t friend_number)
     send_text_message_to_friend(tox, friend_number,
                                 "=========================\nBildGruppenArbeiter version:%s\n=========================",
                                 global_version_string);
-
     send_text_message_to_friend(tox, friend_number, " .info          --> show status");
     send_text_message_to_friend(tox, friend_number, " .settv <ToxID> --> Set <ToxID> as TV");
     send_text_message_to_friend(tox, friend_number, " .deltv         --> Delete TV");
@@ -932,14 +944,17 @@ void cmd_stats(Tox *tox, uint32_t friend_number)
         case TOX_CONNECTION_NONE:
             send_text_message_to_friend(tox, friend_number, "BildGruppenArbeiter status:offline");
             break;
+
         case TOX_CONNECTION_TCP:
             send_text_message_to_friend(tox, friend_number,
                                         "BildGruppenArbeiter status:Online, using TCP");
             break;
+
         case TOX_CONNECTION_UDP:
             send_text_message_to_friend(tox, friend_number,
                                         "BildGruppenArbeiter status:Online, using UDP");
             break;
+
         default:
             send_text_message_to_friend(tox, friend_number, "BildGruppenArbeiter status:*unknown*");
             break;
@@ -951,44 +966,35 @@ void cmd_stats(Tox *tox, uint32_t friend_number)
     get_elapsed_time_str(time_str, sizeof(time_str), cur_time - global_start_time);
     send_text_message_to_friend(tox, friend_number, "Uptime: %s", time_str);
     // ----- uptime -----
-
     // ----- friends -----
     send_text_message_to_friend(tox, friend_number, "Friends: %zu (%d online)",
                                 tox_self_get_friend_list_size(tox), get_online_friend_count(tox));
     // ----- friends -----
-
     // ----- calls -----
     // send_text_message_to_friend(tox, friend_number, "Calls: %d active calls",
     //                            (int)1);
     // ----- calls -----
-
     // ----- Active caller -----
     send_text_message_to_friend(tox, friend_number, "Active Caller: %d [friendnum] global_video_active=%d",
                                 (int)friend_to_take_av_from, (int)global_video_active);
     // ----- Active caller -----
-
     // ----- TV -----
     send_text_message_to_friend(tox, friend_number, "TV: active=%d pubkey_bin=%d  %d [friendnum]",
                                 (int)global_tv_video_active, (int)global_tv_toxid, (int)global_tv_friendnum);
     // ----- TV -----
-
     // ----- Cam -----
     send_text_message_to_friend(tox, friend_number, "Cam: active=%d pubkey_bin=%d",
                                 (int)global_cam_video_active, (int)global_cam_toxid);
     // ----- Cam -----
-
     // ----- bit rates -----
     send_text_message_to_friend(tox, friend_number, "Bitrates (kb/s): audio=%d video=%d",
                                 (int)audio_bitrate, (int)video_bitrate);
     // ----- bit rates -----
-
-
     // ----- ToxID -----
     char tox_id_hex[TOX_ADDRESS_SIZE * 2 + 1];
     get_my_toxid(tox, tox_id_hex);
     send_text_message_to_friend(tox, friend_number, "tox:%s", tox_id_hex);
     // ----- ToxID -----
-
 }
 
 void
@@ -998,8 +1004,7 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
     char dest_msg[length + 1];
     dest_msg[length] = '\0';
     memcpy(dest_msg, message, length);
-
-	dbg(9, "fnum=%d incoming message=%s", (int) friend_number, dest_msg);
+    dbg(9, "fnum=%d incoming message=%s", (int) friend_number, dest_msg);
 
     if (strncmp((char *) dest_msg, ".info", strlen((char *) ".info")) == 0)
     {
@@ -1011,9 +1016,9 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
         {
             char *cam_hex_pubkey_string = (dest_msg + 8);
             uint8_t *cam_pubkey = hex_string_to_bin(cam_hex_pubkey_string);
+
             if (cam_pubkey)
             {
-
                 if (global_cam_video_active == 1)
                 {
                     av_local_disconnect(mytox_av, global_cam_friendnum);
@@ -1025,11 +1030,12 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
                     free(global_cam_toxid);
                     global_cam_toxid = NULL;
                 }
+
                 write_campubkey_to_file(cam_pubkey);
                 global_cam_toxid = cam_pubkey;
-
                 // TODO: remove old Cam as friend (but only if Cam ToxID has really changed)
                 global_cam_friendnum = friend_number_for_cam(tox, global_cam_toxid);
+
                 if (global_cam_friendnum == -1)
                 {
                     invite_cam_as_friend(tox, global_cam_toxid);
@@ -1048,9 +1054,9 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
         {
             char *tv_hex_pubkey_string = (dest_msg + 7);
             uint8_t *tv_pubkey = hex_string_to_bin(tv_hex_pubkey_string);
+
             if (tv_pubkey)
             {
-
                 if (global_tv_video_active == 1)
                 {
                     av_local_disconnect(mytox_av, global_tv_friendnum);
@@ -1062,12 +1068,13 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
                     free(global_tv_toxid);
                     global_tv_toxid = NULL;
                 }
+
                 write_tvpubkey_to_file(tv_pubkey);
                 global_tv_toxid = tv_pubkey;
-
                 // TODO: remove old TV as friend (but only if TV ToxID has really changed)
                 global_tv_friendnum = friend_number_for_tv(tox, global_tv_toxid);
                 dbg(9, "[1]global_tv_friendnum %d", (int)global_tv_friendnum);
+
                 if (global_tv_friendnum == -1)
                 {
                     invite_tv_as_friend(tox, global_tv_toxid);
@@ -1086,6 +1093,7 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
         if (strlen(dest_msg) > 7) // require 3 digits
         {
             int vbr_new = get_number_in_string(dest_msg, (int)video_bitrate);
+
             if ((vbr_new >= DEFAULT_GLOBAL_MIN_VID_BITRATE) && (vbr_new <= DEFAULT_GLOBAL_MAX_VID_BITRATE))
             {
                 video_bitrate = (int32_t)vbr_new;
@@ -1097,7 +1105,6 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
     {
         if (global_cam_toxid)
         {
-
             if (friend_to_take_av_from == global_cam_friendnum)
             {
                 friend_to_take_av_from = -1;
@@ -1114,6 +1121,7 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
             dbg(9, "global_cam_toxid(4)=NULL");
             global_cam_friendnum = -1;
         }
+
         write_campubkey_to_file(NULL);
     }
     else if (strncmp((char *) dest_msg, ".deltv", strlen((char *) ".deltv")) == 0)
@@ -1132,6 +1140,7 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
             global_tv_friendnum = -1;
             dbg(9, "[3]global_tv_friendnum %d", (int)global_tv_friendnum);
         }
+
         write_tvpubkey_to_file(NULL);
     }
     else if (strncmp((char *) dest_msg, "t", strlen((char *) "t")) == 0)
@@ -1148,7 +1157,6 @@ cb___friend_message(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, con
     else if (strncmp((char *) dest_msg, ".kac", strlen((char *) ".kac")) == 0)
     {
         disconnect_all_calls(tox);
-
         friend_to_take_av_from = -1;
         global_video_active = 0;
 
@@ -1190,7 +1198,6 @@ void cb___file_recv(Tox *tox, uint32_t friend_number, uint32_t file_number, uint
     }
 
     tox_file_control(tox, friend_number, file_number, TOX_FILE_CONTROL_CANCEL, NULL);
-
     const char *msg = "Sorry, I don't support file transfers.";
     tox_friend_send_message(tox, friend_number, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) msg,
                             strlen(msg), NULL);
@@ -1210,6 +1217,7 @@ void cb___call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool vi
     {
         dbg(9, "cb___call:friend_to_take_av_from=%d", (int) friend_to_take_av_from);
         dbg(9, "cb___call:friend_number=%d", (int) friend_number);
+
         if (friend_to_take_av_from == friend_number)
         {
             global_video_active = 1;
@@ -1227,37 +1235,35 @@ void cb___call(ToxAV *toxAV, uint32_t friend_number, bool audio_enabled, bool vi
 
 
 static void cb___bit_rate_status(ToxAV *av, uint32_t friend_number,
-                                       uint32_t audio_bit_rate, uint32_t video_bit_rate,
-                                       void *user_data)
+                                 uint32_t audio_bit_rate, uint32_t video_bit_rate,
+                                 void *user_data)
 {
+    dbg(0, "cb___bit_rate_status:001 video_bit_rate=%d friend_number=%d\n", (int)video_bit_rate, (int)friend_number);
+    dbg(0, "cb___bit_rate_status:001 audio_bit_rate=%d friend_number=%d\n", (int)audio_bit_rate, (int)friend_number);
+    TOXAV_ERR_BIT_RATE_SET error = 0;
+    uint32_t video_bit_rate_ = video_bit_rate;
 
-	dbg(0, "cb___bit_rate_status:001 video_bit_rate=%d friend_number=%d\n", (int)video_bit_rate, (int)friend_number);
-	dbg(0, "cb___bit_rate_status:001 audio_bit_rate=%d friend_number=%d\n", (int)audio_bit_rate, (int)friend_number);
+    if (video_bit_rate < DEFAULT_GLOBAL_MIN_VID_BITRATE)
+    {
+        video_bit_rate_ = DEFAULT_GLOBAL_MIN_VID_BITRATE;
+    }
 
-	TOXAV_ERR_BIT_RATE_SET error = 0;
+    // ignore bitrate callback suggested values
+    // toxav_bit_rate_set(av, friend_number, audio_bit_rate, video_bit_rate_, &error);
 
-	uint32_t video_bit_rate_ = video_bit_rate;
+    if (error != 0)
+    {
+        dbg(0, "ToxAV:Setting new Video bitrate has failed with error #%u\n", error);
+    }
+    else
+    {
+        // HINT: don't touch global video bitrate --------
+        // video_bitrate = video_bit_rate_;
+        // HINT: don't touch global video bitrate --------
+    }
 
-	if (video_bit_rate < DEFAULT_GLOBAL_MIN_VID_BITRATE)
-	{
-		video_bit_rate_ = DEFAULT_GLOBAL_MIN_VID_BITRATE;
-	}
-
-	// ignore bitrate callback suggested values
-	// toxav_bit_rate_set(av, friend_number, audio_bit_rate, video_bit_rate_, &error);
-
-	if (error != 0)
-	{
-		dbg(0, "ToxAV:Setting new Video bitrate has failed with error #%u\n", error);
-	}
-	else
-	{
-		// HINT: don't touch global video bitrate --------
-		// video_bitrate = video_bit_rate_;
-		// HINT: don't touch global video bitrate --------
-	}
-
-    dbg(2, "suggested bit rates: audio: %d video: %d friend_number=%d\n", audio_bit_rate, video_bit_rate, (int)friend_number);
+    dbg(2, "suggested bit rates: audio: %d video: %d friend_number=%d\n", audio_bit_rate, video_bit_rate,
+        (int)friend_number);
     dbg(2, "default   bit rates: audio: %d video: %d friend_number=%d\n", audio_bitrate, video_bitrate, (int)friend_number);
 }
 
@@ -1267,6 +1273,7 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
     if (state & TOXAV_FRIEND_CALL_STATE_FINISHED)
     {
         dbg(9, "Call with friend %d finished", friend_number);
+
         if (friend_number == global_tv_friendnum)
         {
             global_tv_video_active = 0;
@@ -1289,6 +1296,7 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
     else if (state & TOXAV_FRIEND_CALL_STATE_ERROR)
     {
         dbg(9, "Call with friend %d errored", friend_number);
+
         if (friend_number == global_tv_friendnum)
         {
             // *crash* // av_local_disconnect(mytox_av, friend_number);
@@ -1308,19 +1316,19 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
                 dbg(9, "friend_to_take_av_from = -1 [7]");
                 dbg(9, "global_video_active = 0 [7]");
             }
+
             // *crash* // av_local_disconnect(mytox_av, friend_number);
         }
 
         return;
     }
 
-
     if (
-         (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_V) ||
-         (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_A) ||
-         (state & TOXAV_FRIEND_CALL_STATE_SENDING_V) ||
-         (state & TOXAV_FRIEND_CALL_STATE_SENDING_A)
-       )
+        (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_V) ||
+        (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_A) ||
+        (state & TOXAV_FRIEND_CALL_STATE_SENDING_V) ||
+        (state & TOXAV_FRIEND_CALL_STATE_SENDING_A)
+    )
     {
         dbg(9, "friend %d accepted call", (int) friend_number);
         dbg(9, "global_tv_friendnum=%d", (int) global_tv_friendnum);
@@ -1340,6 +1348,7 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
         {
             dbg(9, "friend_to_take_av_from=%d", (int) friend_to_take_av_from);
             dbg(9, "friend_number=%d", (int) friend_number);
+
             if (friend_to_take_av_from == -1)
             {
                 friend_to_take_av_from = friend_number;
@@ -1360,7 +1369,6 @@ void cb___call_state(ToxAV *toxAV, uint32_t friend_number, uint32_t state, void 
     bool send_video = state & TOXAV_FRIEND_CALL_STATE_SENDING_V &&
                       (state & TOXAV_FRIEND_CALL_STATE_ACCEPTING_V);
     // ** deactviated ** // toxav_bit_rate_set(toxAV, friend_number, send_audio ? audio_bitrate : 0, send_video ? video_bitrate : 0, NULL);
-
     dbg(9, "Call state for friend %d changed to %d: audio: %d, video: %d", friend_number, state, send_audio, send_video);
 }
 
@@ -1374,7 +1382,6 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
         {
             if (friend_to_take_av_from == friend_number)
             {
-
                 TOXAV_ERR_SEND_FRAME err;
 
                 // send to TV ---------------------------
@@ -1389,18 +1396,18 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
                                                channels,
                                                sampling_rate,
                                                &err);
+
                         if (err != TOXAV_ERR_SEND_FRAME_OK)
                         {
-                            // dbg(9, "Could not send audio frame to TV: %d, error: %d",
-                            //    friend_number,
-                            //    err);
+                            dbg(9, "Could not send audio frame to TV: %d, error: %d",
+                                friend_number,
+                                err);
                             global_tv_video_active = 0;
                         }
                     }
                 }
+
                 // send to TV ---------------------------
-
-
                 // TODO: send to all connected friends ---------------------------
                 size_t i = 0;
                 size_t size = tox_self_get_friend_list_size(mytox_global);
@@ -1421,6 +1428,7 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
                                                    channels,
                                                    sampling_rate,
                                                    &err);
+
                             if (err != TOXAV_ERR_SEND_FRAME_OK)
                             {
                                 // dbg(9, "Could not send audio frame to friend: %d, error: %d",
@@ -1430,6 +1438,7 @@ void cb___audio_receive_frame(ToxAV *toxAV, uint32_t friend_number, const int16_
                         }
                     }
                 }
+
                 // TODO: send to all connected friends ---------------------------
             }
         }
@@ -1481,12 +1490,10 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                 {
                     // dbg(9, "cb___video_receive_frame:global_tv_friendnum=%d",
                     //   (int) global_tv_friendnum);
-
                     if (global_tv_video_active == 1)
                     {
                         //dbg(9, "cb___video_receive_frame:global_tv_video_active=%d",
                         //   (int) global_tv_video_active);
-
                         toxav_video_send_frame(toxAV,
                                                global_tv_friendnum,
                                                width,
@@ -1495,6 +1502,7 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                                                u_dest,
                                                v_dest,
                                                &err);
+
                         if (err != TOXAV_ERR_SEND_FRAME_OK)
                         {
                             // dbg(9, "Could not send video frame to TV: %d, error: %d", (int)global_tv_friendnum,
@@ -1503,8 +1511,8 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                         }
                     }
                 }
-                // send to TV ---------------------------
 
+                // send to TV ---------------------------
                 // TODO: send to all connected friends ---------------------------
                 size_t i = 0;
                 size_t size = tox_self_get_friend_list_size(mytox_global);
@@ -1518,7 +1526,6 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                     for (i = 0; i < size; i++)
                     {
                         // dbg(9, "list[i]=%d", (int)list[i]);
-
                         if (list[i] != global_cam_friendnum)
                         {
                             toxav_video_send_frame(toxAV,
@@ -1529,6 +1536,7 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                                                    u_dest,
                                                    v_dest,
                                                    &err);
+
                             if (err != TOXAV_ERR_SEND_FRAME_OK)
                             {
                                 // dbg(9, "Could not send video frame to friend: %d, error: %d",
@@ -1538,6 +1546,7 @@ void cb___video_receive_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t wid
                         }
                     }
                 }
+
                 // TODO: send to all connected friends ---------------------------
             }
         }
@@ -1561,18 +1570,15 @@ Tox *create_tox()
 {
     Tox *tox;
     struct Tox_Options options;
-
-/*
-	TOX_ERR_OPTIONS_NEW err_options;
-    struct Tox_Options options = tox_options_new(&err_options);
-	if (err_options != TOX_ERR_OPTIONS_NEW_OK)
-	{
-		dbg(0, "tox_options_new error\n");
-	}
-*/
-
+    /*
+        TOX_ERR_OPTIONS_NEW err_options;
+        struct Tox_Options options = tox_options_new(&err_options);
+        if (err_options != TOX_ERR_OPTIONS_NEW_OK)
+        {
+            dbg(0, "tox_options_new error\n");
+        }
+    */
     tox_options_default(&options);
-
     // ----------------------------------------------
     // uint16_t tcp_port = 33445; // act as TCP relay
     uint16_t tcp_port = 0; // DON'T act as TCP relay
@@ -1589,8 +1595,8 @@ Tox *create_tox()
         options.udp_enabled = false; // TCP mode
         dbg(0, "setting TCP mode");
     }
-    // ----------------------------------------------
 
+    // ----------------------------------------------
     options.ipv6_enabled = false;
     options.local_discovery_enabled = true;
     options.hole_punching_enabled = true;
@@ -1618,30 +1624,26 @@ Tox *create_tox()
     // set our own handler for c-toxcore logging messages!!
     options.log_callback = tox_log_cb__custom;
     // ------------------------------------------------------------
-
-
     FILE *f = fopen(savedata_filename, "rb");
+
     if (f)
     {
         fseek(f, 0, SEEK_END);
         long fsize = ftell(f);
         fseek(f, 0, SEEK_SET);
-
         uint8_t *savedata = malloc(fsize);
-
         size_t dummy = fread(savedata, fsize, 1, f);
+
         if (dummy < 1)
         {
             dbg(0, "reading savedata failed");
         }
-        fclose(f);
 
+        fclose(f);
         options.savedata_type = TOX_SAVEDATA_TYPE_TOX_SAVE;
         options.savedata_data = savedata;
         options.savedata_length = fsize;
-
         tox = tox_new(&options, NULL);
-
         free((void *) savedata);
     }
     else
@@ -1651,7 +1653,6 @@ Tox *create_tox()
 
     bool local_discovery_enabled = tox_options_get_local_discovery_enabled(&options);
     dbg(9, "local discovery enabled = %d", (int) local_discovery_enabled);
-
     return tox;
 }
 
@@ -1660,13 +1661,10 @@ void update_savedata_file(const Tox *tox)
     size_t size = tox_get_savedata_size(tox);
     char *savedata = malloc(size);
     tox_get_savedata(tox, (uint8_t *) savedata);
-
     FILE *f = fopen(savedata_tmp_filename, "wb");
     fwrite(savedata, size, 1, f);
     fclose(f);
-
     rename(savedata_tmp_filename, savedata_filename);
-
     free(savedata);
 }
 
@@ -1681,9 +1679,10 @@ void shuffle(int *array, size_t n)
     if (n > 1)
     {
         size_t i;
+
         for (i = n - 1; i > 0; i--)
         {
-            size_t j = (unsigned int) (drand48() * (i + 1));
+            size_t j = (unsigned int)(drand48() * (i + 1));
             int t = array[j];
             array[j] = array[i];
             array[i] = t;
@@ -1694,10 +1693,10 @@ void shuffle(int *array, size_t n)
 
 void bootstap_nodes(Tox *tox, DHT_node nodes[], int number_of_nodes, int add_as_tcp_relay)
 {
-
     bool res = 0;
     size_t i = 0;
     int random_order_nodenums[number_of_nodes];
+
     for (size_t j = 0; (int) j < (int) number_of_nodes; j++)
     {
         random_order_nodenums[j] = (int) j;
@@ -1708,13 +1707,12 @@ void bootstap_nodes(Tox *tox, DHT_node nodes[], int number_of_nodes, int add_as_
     for (size_t j = 0; (int) j < (int) number_of_nodes; j++)
     {
         i = (size_t) random_order_nodenums[j];
-
         res = sodium_hex2bin(nodes[i].key_bin, sizeof(nodes[i].key_bin),
                              nodes[i].key_hex, sizeof(nodes[i].key_hex) - 1, NULL, NULL, NULL);
         // dbg(9, "sodium_hex2bin:res=%d\n", res);
-
         TOX_ERR_BOOTSTRAP error;
         res = tox_bootstrap(tox, nodes[i].ip, nodes[i].port, nodes[i].key_bin, &error);
+
         if (res != true)
         {
             if (error == TOX_ERR_BOOTSTRAP_OK)
@@ -1739,11 +1737,11 @@ void bootstap_nodes(Tox *tox, DHT_node nodes[], int number_of_nodes, int add_as_
             // dbg(9, "bootstrap:%s %d [TRUE]res=%d\n", nodes[i].ip, nodes[i].port, res);
         }
 
-
         if ((add_as_tcp_relay == 1) && (switch_tcponly == 1))
         {
             res = tox_add_tcp_relay(tox, nodes[i].ip, nodes[i].port, nodes[i].key_bin,
                                     &error); // use also as TCP relay
+
             if (res != true)
             {
                 if (error == TOX_ERR_BOOTSTRAP_OK)
@@ -1778,95 +1776,90 @@ void bootstap_nodes(Tox *tox, DHT_node nodes[], int number_of_nodes, int add_as_
 
 void bootstrap(Tox *tox)
 {
-
     // these nodes seem to be faster!!
     DHT_node nodes1[] =
-            {
-                    {"178.62.250.138",  33445, "788236D34978D1D5BD822F0A5BEBD2C53C64CC31CD3149350EE27D4D9A2F9B6B", {0}},
-                    {"51.15.37.145",    33445, "6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E", {0}},
-                    {"130.133.110.14",  33445, "461FA3776EF0FA655F1A05477DF1B3B614F7D6B124F7DB1DD4FE3C08B03B640F", {0}},
-                    {"23.226.230.47",   33445, "A09162D68618E742FFBCA1C2C70385E6679604B2D80EA6E84AD0996A1AC8A074", {0}},
-                    {"163.172.136.118", 33445, "2C289F9F37C20D09DA83565588BF496FAB3764853FA38141817A72E3F18ACA0B", {0}},
-                    {"217.182.143.254", 443,   "7AED21F94D82B05774F697B209628CD5A9AD17E0C073D9329076A4C28ED28147", {0}},
-                    {"185.14.30.213",   443,   "2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B", {0}},
-                    {"136.243.141.187", 443,   "6EE1FADE9F55CC7938234CC07C864081FC606D8FE7B751EDA217F268F1078A39", {0}},
-                    {"128.199.199.197", 33445, "B05C8869DBB4EDDD308F43C1A974A20A725A36EACCA123862FDE9945BF9D3E09", {0}},
-                    {"198.46.138.44",   33445, "F404ABAA1C99A9D37D61AB54898F56793E1DEF8BD46B1038B9D822E8460FAB67", {0}}
-            };
-
-
+    {
+        {"178.62.250.138",  33445, "788236D34978D1D5BD822F0A5BEBD2C53C64CC31CD3149350EE27D4D9A2F9B6B", {0}},
+        {"51.15.37.145",    33445, "6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E", {0}},
+        {"130.133.110.14",  33445, "461FA3776EF0FA655F1A05477DF1B3B614F7D6B124F7DB1DD4FE3C08B03B640F", {0}},
+        {"23.226.230.47",   33445, "A09162D68618E742FFBCA1C2C70385E6679604B2D80EA6E84AD0996A1AC8A074", {0}},
+        {"163.172.136.118", 33445, "2C289F9F37C20D09DA83565588BF496FAB3764853FA38141817A72E3F18ACA0B", {0}},
+        {"217.182.143.254", 443,   "7AED21F94D82B05774F697B209628CD5A9AD17E0C073D9329076A4C28ED28147", {0}},
+        {"185.14.30.213",   443,   "2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B", {0}},
+        {"136.243.141.187", 443,   "6EE1FADE9F55CC7938234CC07C864081FC606D8FE7B751EDA217F268F1078A39", {0}},
+        {"128.199.199.197", 33445, "B05C8869DBB4EDDD308F43C1A974A20A725A36EACCA123862FDE9945BF9D3E09", {0}},
+        {"198.46.138.44",   33445, "F404ABAA1C99A9D37D61AB54898F56793E1DEF8BD46B1038B9D822E8460FAB67", {0}}
+    };
     // more nodes here, but maybe some issues
     DHT_node nodes2[] =
-            {
-                    {"178.62.250.138",           33445, "788236D34978D1D5BD822F0A5BEBD2C53C64CC31CD3149350EE27D4D9A2F9B6B", {0}},
-                    {"136.243.141.187",          443,   "6EE1FADE9F55CC7938234CC07C864081FC606D8FE7B751EDA217F268F1078A39", {0}},
-                    {"185.14.30.213",            443,   "2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B", {0}},
-                    {"198.46.138.44",            33445, "F404ABAA1C99A9D37D61AB54898F56793E1DEF8BD46B1038B9D822E8460FAB67", {0}},
-                    {"51.15.37.145",             33445, "6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E", {0}},
-                    {"130.133.110.14",           33445, "461FA3776EF0FA655F1A05477DF1B3B614F7D6B124F7DB1DD4FE3C08B03B640F", {0}},
-                    {"205.185.116.116",          33445, "A179B09749AC826FF01F37A9613F6B57118AE014D4196A0E1105A98F93A54702", {0}},
-                    {"198.98.51.198",            33445, "1D5A5F2F5D6233058BF0259B09622FB40B482E4FA0931EB8FD3AB8E7BF7DAF6F", {0}},
-                    {"108.61.165.198",           33445, "8E7D0B859922EF569298B4D261A8CCB5FEA14FB91ED412A7603A585A25698832", {0}},
-                    {"194.249.212.109",          33445, "3CEE1F054081E7A011234883BC4FC39F661A55B73637A5AC293DDF1251D9432B", {0}},
-                    {"185.25.116.107",           33445, "DA4E4ED4B697F2E9B000EEFE3A34B554ACD3F45F5C96EAEA2516DD7FF9AF7B43", {0}},
-                    {"5.189.176.217",            5190,  "2B2137E094F743AC8BD44652C55F41DFACC502F125E99E4FE24D40537489E32F", {0}},
-                    {"217.182.143.254",          2306,  "7AED21F94D82B05774F697B209628CD5A9AD17E0C073D9329076A4C28ED28147", {0}},
-                    {"104.223.122.15",           33445, "0FB96EEBFB1650DDB52E70CF773DDFCABE25A95CC3BB50FC251082E4B63EF82A", {0}},
-                    {"tox.verdict.gg",           33445, "1C5293AEF2114717547B39DA8EA6F1E331E5E358B35F9B6B5F19317911C5F976", {0}},
-                    {"d4rk4.ru",                 1813,  "53737F6D47FA6BD2808F378E339AF45BF86F39B64E79D6D491C53A1D522E7039", {0}},
-                    {"104.233.104.126",          33445, "EDEE8F2E839A57820DE3DA4156D88350E53D4161447068A3457EE8F59F362414", {0}},
-                    {"51.254.84.212",            33445, "AEC204B9A4501412D5F0BB67D9C81B5DB3EE6ADA64122D32A3E9B093D544327D", {0}},
-                    {"88.99.133.52",             33445, "2D320F971EF2CA18004416C2AAE7BA52BF7949DB34EA8E2E21AF67BD367BE211", {0}},
-                    {"185.58.206.164",           33445, "24156472041E5F220D1FA11D9DF32F7AD697D59845701CDD7BE7D1785EB9DB39", {0}},
-                    {"92.54.84.70",              33445, "5625A62618CB4FCA70E147A71B29695F38CC65FF0CBD68AD46254585BE564802", {0}},
-                    {"195.93.190.6",             33445, "FB4CE0DDEFEED45F26917053E5D24BDDA0FA0A3D83A672A9DA2375928B37023D", {0}},
-                    {"tox.uplinklabs.net",       33445, "1A56EA3EDF5DF4C0AEABBF3C2E4E603890F87E983CAC8A0D532A335F2C6E3E1F", {0}},
-                    {"toxnode.nek0.net",         33445, "20965721D32CE50C3E837DD75B33908B33037E6225110BFF209277AEAF3F9639", {0}},
-                    {"95.215.44.78",             33445, "672DBE27B4ADB9D5FB105A6BB648B2F8FDB89B3323486A7A21968316E012023C", {0}},
-                    {"163.172.136.118",          33445, "2C289F9F37C20D09DA83565588BF496FAB3764853FA38141817A72E3F18ACA0B", {0}},
-                    {"sorunome.de",              33445, "02807CF4F8BB8FB390CC3794BDF1E8449E9A8392C5D3F2200019DA9F1E812E46", {0}},
-                    {"37.97.185.116",            33445, "E59A0E71ADA20D35BD1B0957059D7EF7E7792B3D680AE25C6F4DBBA09114D165", {0}},
-                    {"193.124.186.205",          5228,  "9906D65F2A4751068A59D30505C5FC8AE1A95E0843AE9372EAFA3BAB6AC16C2C", {0}},
-                    {"80.87.193.193",            33445, "B38255EE4B054924F6D79A5E6E5889EC94B6ADF6FE9906F97A3D01E3D083223A", {0}},
-                    {"initramfs.io",             33445, "3F0A45A268367C1BEA652F258C85F4A66DA76BCAA667A49E770BCC4917AB6A25", {0}},
-                    {"hibiki.eve.moe",           33445, "D3EB45181B343C2C222A5BCF72B760638E15ED87904625AAD351C594EEFAE03E", {0}},
-                    {"tox.deadteam.org",         33445, "C7D284129E83877D63591F14B3F658D77FF9BA9BA7293AEB2BDFBFE1A803AF47", {0}},
-                    {"46.229.52.198",            33445, "813C8F4187833EF0655B10F7752141A352248462A567529A38B6BBF73E979307", {0}},
-                    {"node.tox.ngc.network",     33445, "A856243058D1DE633379508ADCAFCF944E40E1672FF402750EF712E30C42012A", {0}},
-                    {"144.217.86.39",            33445, "7E5668E0EE09E19F320AD47902419331FFEE147BB3606769CFBE921A2A2FD34C", {0}},
-                    {"185.14.30.213",            443,   "2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B", {0}},
-                    {"77.37.160.178",            33440, "CE678DEAFA29182EFD1B0C5B9BC6999E5A20B50A1A6EC18B91C8EBB591712416", {0}},
-                    {"85.21.144.224",            33445, "8F738BBC8FA9394670BCAB146C67A507B9907C8E564E28C2B59BEBB2FF68711B", {0}},
-                    {"tox.natalenko.name",       33445, "1CB6EBFD9D85448FA70D3CAE1220B76BF6FCE911B46ACDCF88054C190589650B", {0}},
-                    {"37.187.122.30",            33445, "BEB71F97ED9C99C04B8489BB75579EB4DC6AB6F441B603D63533122F1858B51D", {0}},
-                    {"completelyunoriginal.moe", 33445, "FBC7DED0B0B662D81094D91CC312D6CDF12A7B16C7FFB93817143116B510C13E", {0}},
-                    {"136.243.141.187",          443,   "6EE1FADE9F55CC7938234CC07C864081FC606D8FE7B751EDA217F268F1078A39", {0}},
-                    {"tox.abilinski.com",        33445, "0E9D7FEE2AA4B42A4C18FE81C038E32FFD8D907AAA7896F05AA76C8D31A20065", {0}},
-                    {"95.215.46.114",            33445, "5823FB947FF24CF83DDFAC3F3BAA18F96EA2018B16CC08429CB97FA502F40C23", {0}},
-                    {"51.15.54.207",             33445, "1E64DBA45EC810C0BF3A96327DC8A9D441AB262C14E57FCE11ECBCE355305239", {0}}
-            };
-
+    {
+        {"178.62.250.138",           33445, "788236D34978D1D5BD822F0A5BEBD2C53C64CC31CD3149350EE27D4D9A2F9B6B", {0}},
+        {"136.243.141.187",          443,   "6EE1FADE9F55CC7938234CC07C864081FC606D8FE7B751EDA217F268F1078A39", {0}},
+        {"185.14.30.213",            443,   "2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B", {0}},
+        {"198.46.138.44",            33445, "F404ABAA1C99A9D37D61AB54898F56793E1DEF8BD46B1038B9D822E8460FAB67", {0}},
+        {"51.15.37.145",             33445, "6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E", {0}},
+        {"130.133.110.14",           33445, "461FA3776EF0FA655F1A05477DF1B3B614F7D6B124F7DB1DD4FE3C08B03B640F", {0}},
+        {"205.185.116.116",          33445, "A179B09749AC826FF01F37A9613F6B57118AE014D4196A0E1105A98F93A54702", {0}},
+        {"198.98.51.198",            33445, "1D5A5F2F5D6233058BF0259B09622FB40B482E4FA0931EB8FD3AB8E7BF7DAF6F", {0}},
+        {"108.61.165.198",           33445, "8E7D0B859922EF569298B4D261A8CCB5FEA14FB91ED412A7603A585A25698832", {0}},
+        {"194.249.212.109",          33445, "3CEE1F054081E7A011234883BC4FC39F661A55B73637A5AC293DDF1251D9432B", {0}},
+        {"185.25.116.107",           33445, "DA4E4ED4B697F2E9B000EEFE3A34B554ACD3F45F5C96EAEA2516DD7FF9AF7B43", {0}},
+        {"5.189.176.217",            5190,  "2B2137E094F743AC8BD44652C55F41DFACC502F125E99E4FE24D40537489E32F", {0}},
+        {"217.182.143.254",          2306,  "7AED21F94D82B05774F697B209628CD5A9AD17E0C073D9329076A4C28ED28147", {0}},
+        {"104.223.122.15",           33445, "0FB96EEBFB1650DDB52E70CF773DDFCABE25A95CC3BB50FC251082E4B63EF82A", {0}},
+        {"tox.verdict.gg",           33445, "1C5293AEF2114717547B39DA8EA6F1E331E5E358B35F9B6B5F19317911C5F976", {0}},
+        {"d4rk4.ru",                 1813,  "53737F6D47FA6BD2808F378E339AF45BF86F39B64E79D6D491C53A1D522E7039", {0}},
+        {"104.233.104.126",          33445, "EDEE8F2E839A57820DE3DA4156D88350E53D4161447068A3457EE8F59F362414", {0}},
+        {"51.254.84.212",            33445, "AEC204B9A4501412D5F0BB67D9C81B5DB3EE6ADA64122D32A3E9B093D544327D", {0}},
+        {"88.99.133.52",             33445, "2D320F971EF2CA18004416C2AAE7BA52BF7949DB34EA8E2E21AF67BD367BE211", {0}},
+        {"185.58.206.164",           33445, "24156472041E5F220D1FA11D9DF32F7AD697D59845701CDD7BE7D1785EB9DB39", {0}},
+        {"92.54.84.70",              33445, "5625A62618CB4FCA70E147A71B29695F38CC65FF0CBD68AD46254585BE564802", {0}},
+        {"195.93.190.6",             33445, "FB4CE0DDEFEED45F26917053E5D24BDDA0FA0A3D83A672A9DA2375928B37023D", {0}},
+        {"tox.uplinklabs.net",       33445, "1A56EA3EDF5DF4C0AEABBF3C2E4E603890F87E983CAC8A0D532A335F2C6E3E1F", {0}},
+        {"toxnode.nek0.net",         33445, "20965721D32CE50C3E837DD75B33908B33037E6225110BFF209277AEAF3F9639", {0}},
+        {"95.215.44.78",             33445, "672DBE27B4ADB9D5FB105A6BB648B2F8FDB89B3323486A7A21968316E012023C", {0}},
+        {"163.172.136.118",          33445, "2C289F9F37C20D09DA83565588BF496FAB3764853FA38141817A72E3F18ACA0B", {0}},
+        {"sorunome.de",              33445, "02807CF4F8BB8FB390CC3794BDF1E8449E9A8392C5D3F2200019DA9F1E812E46", {0}},
+        {"37.97.185.116",            33445, "E59A0E71ADA20D35BD1B0957059D7EF7E7792B3D680AE25C6F4DBBA09114D165", {0}},
+        {"193.124.186.205",          5228,  "9906D65F2A4751068A59D30505C5FC8AE1A95E0843AE9372EAFA3BAB6AC16C2C", {0}},
+        {"80.87.193.193",            33445, "B38255EE4B054924F6D79A5E6E5889EC94B6ADF6FE9906F97A3D01E3D083223A", {0}},
+        {"initramfs.io",             33445, "3F0A45A268367C1BEA652F258C85F4A66DA76BCAA667A49E770BCC4917AB6A25", {0}},
+        {"hibiki.eve.moe",           33445, "D3EB45181B343C2C222A5BCF72B760638E15ED87904625AAD351C594EEFAE03E", {0}},
+        {"tox.deadteam.org",         33445, "C7D284129E83877D63591F14B3F658D77FF9BA9BA7293AEB2BDFBFE1A803AF47", {0}},
+        {"46.229.52.198",            33445, "813C8F4187833EF0655B10F7752141A352248462A567529A38B6BBF73E979307", {0}},
+        {"node.tox.ngc.network",     33445, "A856243058D1DE633379508ADCAFCF944E40E1672FF402750EF712E30C42012A", {0}},
+        {"144.217.86.39",            33445, "7E5668E0EE09E19F320AD47902419331FFEE147BB3606769CFBE921A2A2FD34C", {0}},
+        {"185.14.30.213",            443,   "2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B", {0}},
+        {"77.37.160.178",            33440, "CE678DEAFA29182EFD1B0C5B9BC6999E5A20B50A1A6EC18B91C8EBB591712416", {0}},
+        {"85.21.144.224",            33445, "8F738BBC8FA9394670BCAB146C67A507B9907C8E564E28C2B59BEBB2FF68711B", {0}},
+        {"tox.natalenko.name",       33445, "1CB6EBFD9D85448FA70D3CAE1220B76BF6FCE911B46ACDCF88054C190589650B", {0}},
+        {"37.187.122.30",            33445, "BEB71F97ED9C99C04B8489BB75579EB4DC6AB6F441B603D63533122F1858B51D", {0}},
+        {"completelyunoriginal.moe", 33445, "FBC7DED0B0B662D81094D91CC312D6CDF12A7B16C7FFB93817143116B510C13E", {0}},
+        {"136.243.141.187",          443,   "6EE1FADE9F55CC7938234CC07C864081FC606D8FE7B751EDA217F268F1078A39", {0}},
+        {"tox.abilinski.com",        33445, "0E9D7FEE2AA4B42A4C18FE81C038E32FFD8D907AAA7896F05AA76C8D31A20065", {0}},
+        {"95.215.46.114",            33445, "5823FB947FF24CF83DDFAC3F3BAA18F96EA2018B16CC08429CB97FA502F40C23", {0}},
+        {"51.15.54.207",             33445, "1E64DBA45EC810C0BF3A96327DC8A9D441AB262C14E57FCE11ECBCE355305239", {0}}
+    };
     // only nodes.tox.chat
     DHT_node nodes3[] =
-            {
-                    {"51.15.37.145", 33445, "6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E", {0}}
-            };
-
+    {
+        {"51.15.37.145", 33445, "6FC41E2BD381D37E9748FC0E0328CE086AF9598BECC8FEB7DDF2E440475F300E", {0}}
+    };
 
     if (switch_nodelist_2 == 0)
     {
         dbg(9, "nodeslist:1");
-        bootstap_nodes(tox, &nodes1, (int) (sizeof(nodes1) / sizeof(DHT_node)), 1);
+        bootstap_nodes(tox, &nodes1, (int)(sizeof(nodes1) / sizeof(DHT_node)), 1);
     }
     else if (switch_nodelist_2 == 2)
     {
         dbg(9, "nodeslist:3");
-        bootstap_nodes(tox, &nodes3, (int) (sizeof(nodes3) / sizeof(DHT_node)), 0);
+        bootstap_nodes(tox, &nodes3, (int)(sizeof(nodes3) / sizeof(DHT_node)), 0);
     }
     else // (switch_nodelist_2 == 1)
     {
         dbg(9, "nodeslist:2");
-        bootstap_nodes(tox, &nodes2, (int) (sizeof(nodes2) / sizeof(DHT_node)), 1);
+        bootstap_nodes(tox, &nodes2, (int)(sizeof(nodes2) / sizeof(DHT_node)), 1);
     }
 }
 
@@ -1905,7 +1898,6 @@ void cb___friend_connection_status(Tox *tox, uint32_t friendnum, TOX_CONNECTION 
     if (connection_status != TOX_CONNECTION_NONE)
     {
         // dbg(0, "friend %d just got online", friendnum);
-
         if (global_tv_friendnum == friendnum)
         {
             start_av_call_to_tv(tox, global_tv_friendnum);
@@ -1940,6 +1932,7 @@ void cb___friend_connection_status(Tox *tox, uint32_t friendnum, TOX_CONNECTION 
                 dbg(9, "friend_to_take_av_from = -1 [1]");
                 dbg(9, "global_video_active = 0 [1]");
             }
+
             av_local_disconnect(mytox_av, friendnum);
         }
     }
@@ -1961,7 +1954,6 @@ void cb___friend_connection_status(Tox *tox, uint32_t friendnum, TOX_CONNECTION 
 void *thread_av(void *data)
 {
     ToxAV *av = (ToxAV *) data;
-
     pthread_t id = pthread_self();
     pthread_mutex_t av_thread_lock;
 
@@ -1976,23 +1968,20 @@ void *thread_av(void *data)
 
     dbg(2, "AV Thread #%d: starting", (int) id);
 
-
     while (toxav_iterate_thread_stop != 1)
     {
         if (global_video_active == 1)
         {
             pthread_mutex_lock(&av_thread_lock);
             // dbg(9, "AV Thread #%d:get frame\n", (int) id);
-
             pthread_mutex_unlock(&av_thread_lock);
-            yieldcpu(DEFAULT_FPS_SLEEP_MS); /* ~4 frames per second */
+            yieldcpu(200); /* ~4 frames per second */
         }
         else
         {
             yieldcpu(100);
         }
     }
-
 
     dbg(2, "ToxVideo:Clean thread exit!");
 }
@@ -2001,7 +1990,6 @@ void *thread_av(void *data)
 void *thread_video_av(void *data)
 {
     ToxAV *av = (ToxAV *) data;
-
     pthread_t id = pthread_self();
     pthread_mutex_t av_thread_lock;
 
@@ -2023,7 +2011,7 @@ void *thread_video_av(void *data)
         // dbg(9, "AV video Thread #%d running ...", (int) id);
         pthread_mutex_unlock(&av_thread_lock);
         // usleep(toxav_iteration_interval(av) * 1000);
-	usleep(5 * 1000);
+        usleep(5 * 1000);
     }
 
     dbg(2, "ToxVideo:Clean video thread exit!");
@@ -2036,7 +2024,6 @@ void get_my_toxid(Tox *tox, char *toxid_str)
 {
     uint8_t tox_id_bin[TOX_ADDRESS_SIZE];
     tox_self_get_address(tox, tox_id_bin);
-
     char tox_id_hex_local[TOX_ADDRESS_SIZE * 2 + 1];
     sodium_bin2hex(tox_id_hex_local, sizeof(tox_id_hex_local), tox_id_bin, sizeof(tox_id_bin));
 
@@ -2045,29 +2032,31 @@ void get_my_toxid(Tox *tox, char *toxid_str)
         tox_id_hex_local[i] = toupper(tox_id_hex_local[i]);
     }
 
-    snprintf(toxid_str, (size_t) (TOX_ADDRESS_SIZE * 2 + 1), "%s", (const char *) tox_id_hex_local);
+    snprintf(toxid_str, (size_t)(TOX_ADDRESS_SIZE * 2 + 1), "%s", (const char *) tox_id_hex_local);
 }
 
 
 void reconnect(Tox *tox)
 {
     bootstrap(tox);
-
     // -------- try to go online --------
     long long unsigned int cur_time = time(NULL);
     uint8_t off = 1;
     long long loop_counter = 0;
     long long overall_loop_counter = 0;
+
     while (1)
     {
         tox_iterate(tox, NULL);
         usleep(tox_iteration_interval(tox) * 1000);
+
         if (tox_self_get_connection_status(tox) && off)
         {
             dbg(2, "Reconnect: Tox online, took %llu seconds", time(NULL) - cur_time);
             off = 0;
             break;
         }
+
         c_sleep(20);
         loop_counter++;
         overall_loop_counter++;
@@ -2086,6 +2075,7 @@ void reconnect(Tox *tox)
             bootstrap(tox);
         }
     }
+
     // -------- try to go online --------
 }
 
@@ -2132,24 +2122,17 @@ int main(int argc, char *argv[])
     global_want_restart = 0;
     my_last_offline_timestamp = -1;
     my_last_online_timestamp = -1;
-
     logfile = fopen(log_filename, "wb");
     setvbuf(logfile, NULL, _IONBF, 0);
-
     global_video_active = 0;
     friend_to_take_av_from = -1;
-
     Tox *tox = create_tox();
     mytox_global = tox;
     global_start_time = time(NULL);
-
     tox_self_set_name(tox, (uint8_t *) bot_name, strlen(bot_name), NULL);
     tox_self_set_status_message(tox, (uint8_t *) bot_status_msg, strlen(bot_status_msg), NULL);
-
     bootstrap(tox);
-
     print_tox_id(tox);
-
     // init callbacks ----------------------------------
     tox_callback_self_connection_status(tox, cb___self_connection_status);
     tox_callback_friend_request(tox, cb___friend_request);
@@ -2157,8 +2140,6 @@ int main(int argc, char *argv[])
     tox_callback_friend_connection_status(tox, cb___friend_connection_status);
     tox_callback_file_recv(tox, cb___file_recv);
     // init callbacks ----------------------------------
-
-
     global_tv_toxid = NULL;
     global_tv_friendnum = -1;
     dbg(9, "[4]global_tv_friendnum %d", (int)global_tv_friendnum);
@@ -2166,29 +2147,28 @@ int main(int argc, char *argv[])
     dbg(9, "main:global_tv_toxid [1] %d", (int)global_tv_toxid);
     read_tvpubkey_from_file(&global_tv_toxid);
     dbg(9, "main:global_tv_toxid [2] %d", (int)global_tv_toxid);
-
     global_cam_toxid = NULL;
     global_cam_friendnum = -1;
     global_cam_video_active = 0;
     read_campubkey_from_file(&global_cam_toxid);
-
-
     update_savedata_file(tox);
-
     // -------- try to go online --------
     long long unsigned int cur_time = time(NULL);
     uint8_t off = 1;
     long long loop_counter = 0;
+
     while (1)
     {
         tox_iterate(tox, NULL);
         usleep(tox_iteration_interval(tox) * 1000);
+
         if (tox_self_get_connection_status(tox) && off)
         {
             dbg(2, "Tox online, took %llu seconds", time(NULL) - cur_time);
             off = 0;
             break;
         }
+
         c_sleep(20);
         loop_counter++;
 
@@ -2200,12 +2180,14 @@ int main(int argc, char *argv[])
             bootstrap(tox);
         }
     }
-    // -------- try to go online --------
 
+    // -------- try to go online --------
     dbg(9, "global_tv_friendnum=%d global_tv_video_active=%d", (int)global_tv_friendnum, (int)global_tv_video_active);
+
     if (global_tv_friendnum == -1)
     {
         dbg(9, "global_tv_toxid %d", (int)global_tv_toxid);
+
         if (global_tv_toxid != NULL)
         {
             invite_tv_as_friend(tox, global_tv_toxid);
@@ -2228,10 +2210,10 @@ int main(int argc, char *argv[])
         }
     }
 
-
     TOXAV_ERR_NEW rc;
     dbg(2, "new Tox AV");
     mytox_av = toxav_new(tox, &rc);
+
     if (rc != TOXAV_ERR_NEW_OK)
     {
         dbg(0, "Error at toxav_new: %d", rc);
@@ -2244,13 +2226,10 @@ int main(int argc, char *argv[])
     toxav_callback_audio_receive_frame(mytox_av, cb___audio_receive_frame, NULL);
     toxav_callback_video_receive_frame(mytox_av, cb___video_receive_frame, NULL);
     // init AV callbacks -------------------------------
-
-
-
     // start toxav thread ------------------------------
     pthread_t tid[2]; // 0 -> toxav_iterate thread, 1 -> video send thread
-
     toxav_iterate_thread_stop = 0;
+
     if (pthread_create(&(tid[0]), NULL, thread_av, (void *) mytox_av) != 0)
     {
         dbg(0, "AV iterate Thread create failed");
@@ -2261,6 +2240,7 @@ int main(int argc, char *argv[])
     }
 
     toxav_video_thread_stop = 0;
+
     if (pthread_create(&(tid[1]), NULL, thread_video_av, (void *) mytox_av) != 0)
     {
         dbg(0, "AV video Thread create failed");
@@ -2269,25 +2249,23 @@ int main(int argc, char *argv[])
     {
         dbg(2, "AV video Thread successfully created");
     }
+
     // start toxav thread ------------------------------
-
-
-
     tox_loop_running = 1;
     signal(SIGINT, sigint_handler);
 
     while (tox_loop_running)
     {
         tox_iterate(tox, NULL);
-	    
-	if (global_video_active == 1)
-	{
-		usleep(3 * 1000);
-	}
-	else
-	{
-        	usleep(tox_iteration_interval(tox) * 1000);
-	}
+
+        if (global_video_active == 1)
+        {
+            usleep(3 * 1000);
+        }
+        else
+        {
+            usleep(tox_iteration_interval(tox) * 1000);
+        }
 
         if (global_want_restart == 1)
         {
@@ -2297,6 +2275,7 @@ int main(int argc, char *argv[])
         else
         {
             check_online_status(tox);
+
             if (global_tv_video_active == 0)
             {
                 // dbg(9, "main:global_tv_video_active=%d", (int)global_tv_video_active);
@@ -2321,7 +2300,8 @@ int main(int argc, char *argv[])
                         // dbg(9, "main:is_friend_online(tox, global_tv_friendnum)=%d", (int)is_friend_online(tox, global_tv_friendnum));
                         if (is_friend_online(tox, global_tv_friendnum) == 1)
                         {
-                            dbg(9, "main:is_friend_online(tox, global_tv_friendnum)=%d global_tv_friendnum=%d", (int)is_friend_online(tox, global_tv_friendnum), (int)global_tv_friendnum);
+                            dbg(9, "main:is_friend_online(tox, global_tv_friendnum)=%d global_tv_friendnum=%d", (int)is_friend_online(tox,
+                                    global_tv_friendnum), (int)global_tv_friendnum);
                             start_av_call_to_tv(tox, global_tv_friendnum);
                         }
                     }
@@ -2354,7 +2334,6 @@ int main(int argc, char *argv[])
 
     update_savedata_file(tox);
     disconnect_all_calls(tox);
-
     toxav_kill(mytox_av);
     tox_kill(tox);
 
@@ -2365,7 +2344,6 @@ int main(int argc, char *argv[])
     }
 
     return 0;
-
 }
 
 
