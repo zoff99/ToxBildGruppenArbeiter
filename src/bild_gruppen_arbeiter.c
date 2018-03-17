@@ -2020,7 +2020,8 @@ void *thread_video_av(void *data)
         toxav_iterate(av);
         // dbg(9, "AV video Thread #%d running ...", (int) id);
         pthread_mutex_unlock(&av_thread_lock);
-        usleep(toxav_iteration_interval(av) * 1000);
+        // usleep(toxav_iteration_interval(av) * 1000);
+	usleep(5 * 1000);
     }
 
     dbg(2, "ToxVideo:Clean video thread exit!");
@@ -2276,7 +2277,15 @@ int main(int argc, char *argv[])
     while (tox_loop_running)
     {
         tox_iterate(tox, NULL);
-        usleep(tox_iteration_interval(tox) * 1000);
+	    
+	if (global_video_active == 1)
+	{
+		usleep(3 * 1000);
+	}
+	else
+	{
+        	usleep(tox_iteration_interval(tox) * 1000);
+	}
 
         if (global_want_restart == 1)
         {
