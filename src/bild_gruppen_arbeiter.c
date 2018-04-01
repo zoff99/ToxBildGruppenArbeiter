@@ -39,8 +39,8 @@
 // ----------- version -----------
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 99
-#define VERSION_PATCH 10
-static const char global_version_string[] = "0.99.10";
+#define VERSION_PATCH 11
+static const char global_version_string[] = "0.99.11";
 // ----------- version -----------
 // ----------- version -----------
 
@@ -50,15 +50,15 @@ static const char global_version_string[] = "0.99.10";
 #define PROXY_PORT_TOR_DEFAULT 9050
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define c_sleep(x) usleep(1000*x)
-#define DEFAULT_FPS_SLEEP_MS 160 // 250=4fps, 500=2fps, 160=6fps  // default video fps (sleep in msecs.)
-#define DEFAULT_GLOBAL_MIN_VID_BITRATE 200 // kbit/sec
+// #define DEFAULT_FPS_SLEEP_MS 160 // 250=4fps, 500=2fps, 160=6fps  // default video fps (sleep in msecs.)
+#define DEFAULT_GLOBAL_MIN_VID_BITRATE 100 // kbit/sec
 #define DEFAULT_GLOBAL_MAX_VID_BITRATE 20000 // kbit/sec
-#define DEFAULT_GLOBAL_NORMAL_VID_BITRATE 5000
+#define DEFAULT_GLOBAL_NORMAL_VID_BITRATE 400
 
 static uint64_t last_purge;
 uint64_t global_start_time;
 
-static int32_t audio_bitrate = 32; // kbits/s
+static int32_t audio_bitrate = 16; // kbits/s
 static int32_t video_bitrate = DEFAULT_GLOBAL_NORMAL_VID_BITRATE; // kbits/s
 static const char *savedata_filename = "savedata.tox";
 const char *savedata_tmp_filename = "savedata.tox.tmp";
@@ -2045,7 +2045,7 @@ void *thread_video_av(void *data)
         // dbg(9, "AV video Thread #%d running ...", (int) id);
         pthread_mutex_unlock(&av_thread_lock);
         // usleep(toxav_iteration_interval(av) * 1000);
-        usleep(5 * 1000);
+        usleep(3 * 1000);
     }
 
     dbg(2, "ToxVideo:Clean video thread exit!");
@@ -2294,7 +2294,7 @@ int main(int argc, char *argv[])
 
         if (global_video_active == 1)
         {
-            usleep(3 * 1000);
+            usleep(2 * 1000);
         }
         else
         {
